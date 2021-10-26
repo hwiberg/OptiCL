@@ -1,5 +1,7 @@
 # OptiCL
-OptiCL is an end-to-end framework for mixed-integer optimization (MIO) with data-driven learned constraints. We address a problem setting in which a practitioner wishes to optimize decisions according to some objective and constraints, but that we have no known functions relating our decisions to the outcomes of interest. We propose to *learn* predictive models for these outcomes using machine learning, and to subsequently *optimize* decisions by embedding the learned models in a larger MIO formulattion.  
+OptiCL is an end-to-end framework for mixed-integer optimization (MIO) with data-driven learned constraints. We address a problem setting in which a practitioner wishes to optimize decisions according to some objective and constraints, but that we have no known functions relating our decisions to the outcomes of interest. We propose to *learn* predictive models for these outcomes using machine learning, and to subsequently *optimize* decisions by embedding the learned models in a larger MIO formulation.  
+
+The framework and full methodology are detailed in our manuscript, Mixed-Integer Optimization with Constraint Learning, available [here](link).
 
 ### How to use OptiCL
 Our pipeline requires two inputs from a user:
@@ -12,6 +14,8 @@ Given these inputs, we implement a pipeline that:
 3. Embeds the learned models and trust region into a MIO formulation.
 
 OptiCL requires no manual specification of a trained ML model, although the end-user can optionally restrict to a subset of model types to be considered in the selection pipeline. Furthermore, we expose the underlying trained models within the pipeline, providing transparency and allowing for the predictive models to be externally evaluated.
+
+We illustrate the full OptiCL pipeline in a case study on food basket optimization for the World Food Programme (**Notebook/folder name**). We also provide a notebook to demonstrate how to train and embed a single learned model, as well as a verification of the embedded predictions (**Examples/Model_Embedding_and_Verification.ipynb**). 
 
 ### Citation
 Our software can be cited as:
