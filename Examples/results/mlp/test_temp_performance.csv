@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2
+../results/,0,5,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (10,)}",-36.18398671421177,8.017082756749335e-07,0.9999999999802882,60.24952015596481,0.9987048913993389
