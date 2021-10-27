@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
+../results/mlp/v1_exp_palatability_model.csv,0,5,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (100,)}",-0.13136518930520702,0.09295108066757542,-0.823646774125862,0.10186968173154085,-0.9691225527535337,,,palatability,mlp

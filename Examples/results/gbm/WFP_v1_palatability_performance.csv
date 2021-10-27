@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
+../results/gbm/WFP_v1_palatability_model.csv,0,5,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.2, 'max_depth': 5, 'n_estimators': 20}",-0.006802492211288802,0.004854656947454709,0.9041689322386107,0.006521760166578735,0.8768279361903809,,,palatability,gbm
