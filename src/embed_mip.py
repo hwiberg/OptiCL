@@ -10,16 +10,16 @@ from pyomo.environ import *
 
 def optimization_MIP(model,
                      x,  ## decision variables (already attached to model)
+                     outcomes_var,  ## variables for the learned outcomes
                      model_master,  ## master table that specifies learned functions for constraints (and parameters)
                      data,  ## dataframe holding all data to be used for convex hull
-                     max_violation=None,
-                     ## parameter for RF models - to be deprecated in favor of specifying within model_master
+                     max_violation=None, ## parameter for RF models - to be deprecated in favor of specifying within model_master
                      tr=True,  ## bool variable for the use of trust region constraints
                      clustering_model=None):  ## trained clustering algorithm using the entire data
 
     def constraints_tree(model, outcome, tree_table, lb=None, ub=None, M=1e5, weight_objective=0):
         ## Add y[outcome] to track predicted value
-        y[outcome] = model.addVar(vtype=GRB.CONTINUOUS, name='y_%s' % outcome, lb=-float('inf'))
+        # y[outcome] = model.addVar(vtype=GRB.CONTINUOUS, name='y_%s' % outcome, lb=-float('inf'))
         ## Leaf-level information (set leaf ID as index)
         leaf_values = tree_table.loc[:, ['ID', 'prediction']].drop_duplicates().set_index('ID')
         # Row-level information: row = single constraint (multiple rows can correspond to single leaf)
@@ -28,21 +28,60 @@ def optimization_MIP(model,
         l_ids = tree_table['ID']
         n_constr = coeff.shape[0]
         L = np.unique(tree_table['ID'])
-        for leaf in L:
-            l[(outcome, leaf)] = model.addVar(vtype=GRB.BINARY, name='l_%s_%d' % (outcome, leaf))
 
-        model.addConstrs(quicksum(x[i] * coeff.loc[j, i] for i in N) <= intercept.iloc[j]
-                         + M * (1 - l[(outcome, l_ids.iloc[j])]) for j in range(n_constr))
-        model.addConstr(y[outcome] == quicksum(leaf_values.loc[j, 'prediction'] * l[(outcome, j)] for j in L))
-        model.addConstr(quicksum(l[(outcome, j)] for j in L) == 1)
+        init_set = [(outcome, str(l)) for l in L]
+        model.l = Var(Set(initialize=init_set), domain=Binary)
+
+        def constraintsTree_1(model, j):
+            return sum(model.x[i]*coeff.loc[j, i] for i in N) <= intercept.iloc[j] + M*(1-model.l[(outcome, str(l_ids.iloc[j]))])
+
+        def constraintsTree_2(model):
+            return model.y[outcome] == sum(leaf_values.loc[i, 'prediction'] * model.l[(outcome, str(i))] for i in L)
+
+        def constraintsTree_3(model):
+            return sum(model.l[(outcome, str(i))] for i in L) == 1
+
+        model.add_component(outcome+'_1', Constraint(range(n_constr), rule=constraintsTree_1))
+        model.add_component(outcome+'_2', Constraint(rule=constraintsTree_2))
+        model.add_component(outcome+'_3', Constraint(rule=constraintsTree_3))
+
+
+        if weight_objective != 0:
+            model.OBJ.set_value(expr=conceptual_model.OBJ.expr + weight_objective * model.y[outcome])
+        else:
+            if not pd.isna(ub):
+                model.linearConstraint = Constraint(expr=model.y[outcome] <= ub)
+            elif not pd.isna(lb):
+                model.linearConstraint = Constraint(expr=model.y[outcome] >= 0)
+
+    def constraints_tree_GRB(model, outcome, tree_table, lb = None, ub = None, M =  1e5, weight_objective=0):
+        ## Add y[outcome] to track predicted value
+        y[outcome] = model.addVar(vtype=GRB.CONTINUOUS, name = 'y_%s' % outcome, lb = -float('inf'))
+        ## Leaf-level information (set leaf ID as index)
+        leaf_values = tree_table.loc[:,['ID','prediction']].drop_duplicates().set_index('ID')
+        # Row-level information: row = single constraint (multiple rows can correspond to single leaf)
+        intercept = tree_table['threshold']
+        coeff = tree_table.drop(['ID', 'threshold', 'prediction'], axis=1, inplace=False).reset_index(drop=True)
+        l_ids = tree_table['ID']
+        n_constr = coeff.shape[0]
+        L = np.unique(tree_table['ID'])
+        for leaf in L:
+            l[(outcome,leaf)] = model.addVar(vtype=GRB.BINARY, name='l_%s_%d' % (outcome, leaf))
+
+        model.addConstrs(quicksum(x[i]*coeff.loc[j, i] for i in N) <= intercept.iloc[j]
+                         + M*(1-l[(outcome,l_ids.iloc[j])]) for j in range(n_constr))
+
+
+        model.addConstr(y[outcome]==quicksum(leaf_values.loc[j, 'prediction']*l[(outcome,j)] for j in L))
+        model.addConstr(quicksum(l[(outcome,j)] for j in L)==1)
 
         if weight_objective != 0:
             obj.addTerms(weight_objective, y[outcome])
         else:
             if not pd.isna(ub):
-                model.addConstr(y[outcome] <= ub)
+                model.addConstr(y[outcome]<=ub)
             elif not pd.isna(lb):
-                model.addConstr(y[outcome] >= lb)
+                model.addConstr(y[outcome]>=lb)
 
     def constraints_gbm(model, outcome, gbm_table, ub=None, lb=None, weight_objective=0):
         gbm_table['Tree_id'] = [outcome + '_' + str(i) for i in gbm_table['Tree_id']]
@@ -110,43 +149,23 @@ def optimization_MIP(model,
                 # Constrain proportion of trees that violate bound to be at most max_violation
                 model.addConstr(1 / len(T) * quicksum(y_viol[j] for j in T) <= max_violation)
 
-    # def constraints_linear(model, outcome, coefficients, lb=None, ub=None, weight_objective=0):
-    #     ## Add y[outcome] to track predicted value
-    #     y[outcome] = model.addVar(vtype=GRB.CONTINUOUS, name='y_%s' % outcome, lb = -float('inf'))
-    #
-    #     # Row-level information: row = single constraint (multiple rows can correspond to single leaf)
-    #     intercept = coefficients['intercept'][0]
-    #     coeff = coefficients.drop(['intercept'], axis=1, inplace=False).loc[0, :]
-    #
-    #     model.addConstr(y[outcome] == quicksum(x[i] * coeff.loc[i] for i in N) + intercept)
-    #
-    #     if weight_objective != 0:
-    #         obj.addTerms(weight_objective, y[outcome])
-    #     else:
-    #         if not pd.isna(ub):
-    #             model.addConstr(y[outcome] <= ub)
-    #         elif not pd.isna(lb):
-    #             model.addConstr(y[outcome] >= lb)
-
     def constraints_linear(model, outcome, coefficients, lb=None, ub=None, weight_objective=0):
         ## Add y[outcome] to track predicted value
-        ####### HOW DO WE SPECIFY THE OUTCOME??
-        model.y = Var(name='y_%s' % outcome, within=Reals)
 
         # Row-level information: row = single constraint (multiple rows can correspond to single leaf)
         intercept = coefficients['intercept'][0]
         coeff = coefficients.drop(['intercept'], axis=1, inplace=False).loc[0, :]
 
         ### What if we have more than 1 linear constraint???  model.ConstraintLinear would be replaced
-        model.outcome = Constraint(expr=model.y == sum(model.x[i] * coeff.loc[i] for i in N) + intercept)
+        model.outcome = Constraint(expr=model.y[outcome] == sum(model.x[i] * coeff.loc[i] for i in N) + intercept)
 
         if weight_objective != 0:
-            model.OBJ.set_value(expr=(conceptual_model.OBJ.expr + weight_objective * model.y))
+            model.OBJ.set_value(expr=(conceptual_model.OBJ.expr + weight_objective * model.y[outcome]))
         else:
             if not pd.isna(ub):
-                model.linearConstraint = Constraint(expr=model.y <= ub)
+                model.linearConstraint = Constraint(expr=model.y[outcome] <= ub)
             elif not pd.isna(lb):
-                model.linearConstraint = Constraint(expr=model.y>= lb)
+                model.linearConstraint = Constraint(expr=model.y[outcome]>= lb)
 
     def constraints_mlp(model, outcome, weights, lb=None, ub=None, weight_objective=0, M_l=-1e5, M_u=1e5):
         ## Add y[outcome] to track predicted value
@@ -201,23 +220,28 @@ def optimization_MIP(model,
                 model.addConstr(y[outcome] >= lb)
 
     def constraints_tr(model, samples, data, clustering_model):
-        # print("Generating Trust Region Constraints")
-        ## Feasibility (Convex Hull)
-        lam = model.addVars(samples, vtype=GRB.CONTINUOUS, name=['lambda_%s' % str(x) for x in samples], lb=0, ub=1)
+        model.lam = Var(samples, domain=Reals, name=['lambda_%s' % str(x) for x in samples], bounds=(0,1))
+
+        def constraint_CTR1(model, i):
+            return model.x[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+
         if clustering_model is not None:
             print('Using the clustering algorithm')
             n_clusters = np.unique(clustering_model.labels_)
-            print(n_clusters)
-            z = model.addVars(n_clusters, name=['cluster_%d' % x for x in n_clusters], vtype=GRB.BINARY)
-            for label in np.unique(clustering_model.labels_):
+            model.u = Var(n_clusters, name=['cluster_%d' % x for x in n_clusters], domain=Binary)
+
+            def constraint_CTR2(model, label):
                 cluster = data[clustering_model.labels_ == label]
                 cluster_samples = cluster.index
-                model.addConstr(quicksum(lam[k] for k in cluster_samples) == z[label])
-            model.addConstrs(x[i] == quicksum(lam[k] * data.loc[k, i] for k in samples) for i in data.columns)
-            model.addConstr(quicksum(z[label] for label in np.unique(clustering_model.labels_)) == 1)
+                return sum(model.lam[k] for k in cluster_samples) == model.u[label]
+
+            model.ConstraintClusteredTrustRegion1 = Constraint(np.unique(clustering_model.labels_), rule=constraint_CTR2)
+            model.ConstraintClusteredTrustRegion2 = Constraint(data.columns, rule=constraint_CTR1)
+            model.ConstraintClusteredTrustRegion3 = Constraint(rule=sum(model.u[label] for label in np.unique(clustering_model.labels_)) == 1)
         else:
-            model.addConstr(quicksum(lam[k] for k in samples) == 1)
-            model.addConstrs(x[i] == quicksum(lam[k] * data.loc[k, i] for k in samples) for i in data.columns)
+            model.ConstraintClusteredTrustRegion1 = Constraint(
+                rule=sum(model.lam[k] for k in samples) == 1)
+            model.ConstraintClusteredTrustRegion2 = Constraint(data.columns, rule=constraint_CTR1)
 
     ## Decision variable indices
     N = x.keys()
