@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
-../results/cart/v1_exp_palatability_model.csv,0,5,"{'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_samples_leaf': [0.02, 0.04, 0.06], 'max_features': [0.4, 0.6, 0.8, 1.0]}","{'max_depth': 10, 'max_features': 1.0, 'min_samples_leaf': 0.02}",-0.014485533618843032,0.013702241762029872,0.73041967388496,0.013975819701665136,0.7161278678880061,,,palatability,cart
