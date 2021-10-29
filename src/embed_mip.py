@@ -32,8 +32,9 @@ def optimization_MIP(model,
         init_set = [(outcome, str(l)) for l in L]
         model.add_component('l', Var(Set(initialize=init_set), domain=Binary))
 
+
         def constraintsTree_1(model, j):
-            return sum(model.x[i]*coeff.loc[j, i] for i in N) <= intercept.iloc[j] + M*(1-model.l[(outcome, str(l_ids.iloc[j]))])
+            return sum(model.x[i]*coeff.loc[j, i] for i in N) <= intercept.iloc[j] + M*(1-model.l[(outcome,str(l_ids.iloc[j]))])
 
         def constraintsTree_2(model):
             return model.y[outcome] == sum(leaf_values.loc[i, 'prediction'] * model.l[(outcome, str(i))] for i in L)
@@ -44,7 +45,6 @@ def optimization_MIP(model,
         model.add_component(outcome+'_1', Constraint(range(n_constr), rule=constraintsTree_1))
         model.add_component(outcome+'_2', Constraint(rule=constraintsTree_2))
         model.add_component(outcome+'_3', Constraint(rule=constraintsTree_3))
-
 
         if weight_objective != 0:
             model.OBJ.set_value(expr=conceptual_model.OBJ.expr + weight_objective * model.y[outcome])
@@ -244,7 +244,7 @@ def optimization_MIP(model,
             model.ConstraintClusteredTrustRegion2 = Constraint(data.columns, rule=constraint_CTR1)
 
     ## Decision variable indices
-    N = x.keys()
+    N = data.columns
     samples = data.index
 
     if tr:
