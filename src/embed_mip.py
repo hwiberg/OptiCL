@@ -30,7 +30,7 @@ def optimization_MIP(model,
         L = np.unique(tree_table['ID'])
 
         init_set = [(outcome, str(l)) for l in L]
-        model.l = Var(Set(initialize=init_set), domain=Binary)
+        model.add_component('l', Var(Set(initialize=init_set), domain=Binary))
 
         def constraintsTree_1(model, j):
             return sum(model.x[i]*coeff.loc[j, i] for i in N) <= intercept.iloc[j] + M*(1-model.l[(outcome, str(l_ids.iloc[j]))])
@@ -52,7 +52,7 @@ def optimization_MIP(model,
             if not pd.isna(ub):
                 model.linearConstraint = Constraint(expr=model.y[outcome] <= ub)
             elif not pd.isna(lb):
-                model.linearConstraint = Constraint(expr=model.y[outcome] >= 0)
+                model.linearConstraint = Constraint(expr=model.y[outcome] >= lb)
 
     def constraints_tree_GRB(model, outcome, tree_table, lb = None, ub = None, M =  1e5, weight_objective=0):
         ## Add y[outcome] to track predicted value
