@@ -200,11 +200,6 @@ def optimization_MIP(model,
     if tr:
         constraints_tr(model, samples, data, clustering_model)
 
-    ## Embed learned models (specified in model_master)
-    y = {}
-    l = tupledict()
-    # obj = model.OBJ
-
     for i, row in model_master.iterrows():
         if i == 0:
             model.y = Var(Any, dense=False, domain=Reals)
