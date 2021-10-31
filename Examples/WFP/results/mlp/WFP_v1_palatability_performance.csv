@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
-../results/mlp/WFP_v1_palatability_model.csv,0,5,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (100,)}",-0.008848856572092358,0.00662006491336421,0.8693197282188969,0.008808112285341544,0.8336471534154075,,,palatability,mlp
