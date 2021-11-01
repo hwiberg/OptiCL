@@ -287,7 +287,7 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
     return gs
 
 
-def run_model(train_x, y_train, test_x, y_test, model_choice, task, cv_folds = 3, 
+def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_folds = 3,
               seed = 1, save_path = '../results/', save = False, shap = False, 
               # weights = []
               parameter_grid = None,
@@ -406,14 +406,14 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, task, cv_folds = 3
             'valid_score': valid_score,
             'train_score' : train_mse, 'train_r2' : train_r2, 
             'test_score' : test_mse, 'test_r2' : test_r2}
-     
-    print("------------- Save results  ----------------")
     performance = pd.DataFrame([list(performance_dict.values())], columns = performance_dict.keys(), index = [0])
     if save:
-        
-        performance.to_csv(save_path+"_performance.csv", index = False)
-        preds_train.to_csv(save_path+"_trainprobs.csv")
-        preds_test.to_csv(save_path+"_testprobs.csv")
+        print("------------- Save results  ----------------")
+        if not os.path.exists('results/%s/' % model_choice):
+            os.makedirs('results/%s/' % model_choice)
+        performance.to_csv('results/%s/%s_performance.csv' % (model_choice, outcome), index=False)
+        # preds_train.to_csv(save_path+"_trainprobs.csv")
+        # preds_test.to_csv(save_path+"_testprobs.csv")
     
         if model_choice == 'cart':
             fig, axes = plt.subplots(nrows = 1,ncols = 1,figsize = (15,15), dpi=200)
