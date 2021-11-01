@@ -193,7 +193,6 @@ def optimization_MIP(model,
         else:
             if not pd.isna(ub):
                 model.add_component('ub_' + outcome, Constraint(expr=model.y[outcome] <= ub))
-                model.upperBound = Constraint(expr=model.y[outcome] <= ub)
             elif not pd.isna(lb):
                 model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
 

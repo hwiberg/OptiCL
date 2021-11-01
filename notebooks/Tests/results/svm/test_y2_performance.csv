@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/svm/test_y2_model.csv,1,5,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-0.11179849385204432,0.1050272265454253,0.4186908572886252,0.10353055507638513,0.4374311809173258,y2,svm

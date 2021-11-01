@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/rf/test_y2_model.csv,1,5,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-0.13439715404847577,0.06917562136768246,0.6171238403940726,0.1276528936316009,0.3063541717724616,y2,rf

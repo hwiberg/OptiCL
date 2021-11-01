@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/gbm/test_y1_model.csv,1,5,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.01, 'max_depth': 5, 'n_estimators': 20}",-16704.277360446606,14350.204375694464,0.13989670770243323,15266.269774682898,-0.013734123931248288,y1,gbm

@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/mlp/test_y1_model.csv,1,5,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (50,)}",-12502.772593997566,6601.1777513433335,0.6043474665358497,7700.856758666204,0.48863596707083135,y1,mlp

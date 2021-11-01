@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/cart/test_y2_model.csv,1,5,"{'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_samples_leaf': [0.02, 0.04, 0.06], 'max_features': [0.4, 0.6, 0.8, 1.0]}","{'max_depth': 3, 'max_features': 0.6, 'min_samples_leaf': 0.02}",-0.14662502716422474,0.11920008819626904,0.3402463022240818,0.16126919270147594,0.12368846834107705,y2,cart
