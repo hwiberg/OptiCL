@@ -8,7 +8,7 @@ ContraintLearning class contains a set of functions for the
 extrapolation of constraints from a trained Optimal Classification Tree
 (with and without hyperplanes). 
 '''
-class constraint_learning(object):
+class ConstraintLearning(object):
     '''
     The initialization requires:
     X: dataset without the target column
