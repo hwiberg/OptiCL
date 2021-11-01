@@ -126,8 +126,9 @@ def optimization_MIP(model,
         max_layer = max(weights['layer'])
 
         # Recursively generate constraints linking nodes between layers, starting from input
-        v_input = list(x.values())
+        # v_input = x.values()
         nodes_input = range(len(x))
+        v_input = [x[f'col{i}'] for i in nodes_input]
         for l in range(max_layer + 1):
             df_layer = weights.query('layer == %d' % l)
             max_nodes = [k for k in df_layer.columns if 'node_' in k]
