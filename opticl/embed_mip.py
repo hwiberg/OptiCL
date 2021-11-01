@@ -233,7 +233,7 @@ def optimization_MIP(model,
     ## Add trust region constraints (with optional pre-trained cluster model)
     if tr:
         constraints_tr(model, data, clustering_model)
-        
+
     ## Initialize variables
     model.y = Var(Any, dense=False, domain=Reals)
     model.l = Var(Any, dense=False, domain=Binary)

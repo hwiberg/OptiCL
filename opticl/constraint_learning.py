@@ -87,92 +87,6 @@ class ConstraintLearning(object):
             c += 1
         return data_reduced
 
-    def mvee_approximation(self, epsilon):
-        """
-        It Finds the ellipse equation in "centre form"
-        (x-c).T * A * (x-c) <= 1 that describes the trust region.
-        It is an alternative to the convex hull.
-
-        Input: data
-               epsilon - 0.01 is a good value.
-
-
-        Output: A - (d x d) positive semi-definite matrix
-                c - (1 x d) centre of the ellipse.
-
-        """
-
-        N, d = self.__data.shape
-
-        n = d + 1.0
-
-        # Lifting of "points" so that it is centrally symmetric
-        A1 = np.column_stack((self.__data, np.ones(N))).T
-
-        err = epsilon + 1.0
-
-        # N x 1 vector where each element is 1/N
-        p = np.ones(N) / N
-
-        # While the computed solution does not satisfy the relaxed
-        # optimality conditions...
-        while err > epsilon:
-            # A1 * diag(p) * A1.T matrix
-            X = np.dot((p * A1),
-                       A1.T)
-
-            # Get diagonal of A1.T * inv(X) * A1 matrix
-            # each element: np.dot(np.dot(A1[:,1].reshape(4,1).T, la.inv(X)), A1[:,1].reshape(4,1))
-            M = np.diag(np.dot(np.dot(A1.T, np.linalg.inv(X)), A1))  # when X is not invertible?
-
-            # Get the index of the maximum value in M
-            j = np.argmax(M)
-
-            # Calculate step size for the ascent.
-            beta = (M[j] - n) / (n * (M[j] - 1.0))
-
-            # Calculate new p
-            new_p = (1 - beta) * p
-
-            # Increment the jth element of p by step_size.
-            new_p[j] += beta
-
-            # The updated error is the sum-of-square-differences
-            # between new_p and p.
-            err = np.linalg.norm(new_p - p)
-
-            # Update p
-            p = new_p
-
-        # Compute the centre of ellipse.
-        c = np.dot(p, self.__data)
-
-        # Compute the A matrix for the ellipse
-        Q = np.linalg.inv(np.dot(np.dot(self.__data.T, np.diag(p)), self.__data)
-                   - np.multiply.outer(c, c)) / d
-
-        return Q, c
-
-    # def convex_combination(self):
-    #     model = ConcreteModel()
-    #
-    #     model.I = RangeSet(0, self.__data.shape[0] - 1)
-    #     model.J = self.get_features_list()
-    #
-    #     model.l = Var(model.I, domain=NonNegativeReals)
-    #     model.x = Var(model.J, domain=Reals)  # this can be a problem because it has to be defined in the same way by the user
-    #
-    #     def constraint_rule1(model):
-    #         return sum(model.l[i] for i in model.I) == 1
-    #
-    #     def constraint_rule2(model, j):
-    #         return sum(model.l[i] * self.__data.loc[i, j] for i in model.I) == model.x[j]
-    #
-    #     model.Constraint1 = Constraint(rule=constraint_rule1)
-    #     model.Constraint2 = Constraint(model.J, rule=constraint_rule2)
-    #
-    #     return model.Constraint1, model.Constraint2
-
     def __leaf_nodes_iai(self, class_c):
         '''
         It returns a list of node corresponding to the leaves of the OCT(-H)
@@ -243,7 +157,7 @@ class ConstraintLearning(object):
                 if class_c == 'r':
                     constraint['prediction'] = self.__learner.get_regression_constant(leaf)
                 else:
-                    constraint['prediction'] = class_c
+                    constraint['prediction'] = class_c  ## THIS IS PROBABLY WRONG
 
                 constraints = constraints.append(constraint)
 
