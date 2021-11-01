@@ -28,12 +28,6 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from pathlib import Path
 
-from utils_ML import *
-
-# from julia import Julia
-# jl = Julia(compiled_modules = False)
-# from interpretableai import iai
-
 def split_data(X, y, train_prop=0.75, seed=1):
     random.seed(seed)
     train_inds = np.random.rand(len(X)) < train_prop

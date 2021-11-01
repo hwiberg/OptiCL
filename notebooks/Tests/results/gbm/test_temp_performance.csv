@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2
+../results/,0,5,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.2, 'max_depth': 2, 'n_estimators': 20}",-14346.244551545566,4314.00082576947,0.8939305706172604,17814.94052276325,0.6170544988313675

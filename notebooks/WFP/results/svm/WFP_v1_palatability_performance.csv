@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
+../results/svm/WFP_v1_palatability_model.csv,0,5,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-0.01911791079441391,0.018821145084184965,0.628470054747098,0.019597277458192414,0.6298795037043556,,,palatability,svm
