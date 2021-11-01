@@ -230,17 +230,16 @@ def optimization_MIP(model,
 
     ## Identify decision variable indices
     N = data.columns
-
     ## Add trust region constraints (with optional pre-trained cluster model)
     if tr:
         constraints_tr(model, data, clustering_model)
-
+        
     ## Initialize variables
-        model.y = Var(Any, dense=False, domain=Reals)
-        model.l = Var(Any, dense=False, domain=Binary)
-        model.y_viol = Var(Any, dense=False, domain=Binary)
-        model.v = Var(Any, dense=False, domain=NonNegativeReals)
-        model.v_ind = Var(Any, dense=False, domain=Binary)
+    model.y = Var(Any, dense=False, domain=Reals)
+    model.l = Var(Any, dense=False, domain=Binary)
+    model.y_viol = Var(Any, dense=False, domain=Binary)
+    model.v = Var(Any, dense=False, domain=NonNegativeReals)
+    model.v_ind = Var(Any, dense=False, domain=Binary)
 
     ## Iterate over all learned models
     for i, row in model_master.iterrows():
