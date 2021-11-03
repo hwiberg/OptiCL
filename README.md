@@ -1,7 +1,7 @@
 # OptiCL
 OptiCL is an end-to-end framework for mixed-integer optimization (MIO) with data-driven learned constraints. We address a problem setting in which a practitioner wishes to optimize decisions according to some objective and constraints, but that we have no known functions relating our decisions to the outcomes of interest. We propose to *learn* predictive models for these outcomes using machine learning, and to subsequently *optimize* decisions by embedding the learned models in a larger MIO formulation.  
 
-The framework and full methodology are detailed in our manuscript, Mixed-Integer Optimization with Constraint Learning, available [here](link).
+The framework and full methodology are detailed in our manuscript, Mixed-Integer Optimization with Constraint Learning.
 
 ## How to use OptiCL
 You can install the OptiCL package locally by cloning the repository and running ```pip install .``` within the home directory of the repo. This will allow you to load `opticl` in Python; see the example notebooks for specific usage of the functions.
