@@ -28,42 +28,6 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from pathlib import Path
 
-def split_data(X, y, train_prop=0.75, seed=1):
-    random.seed(seed)
-    train_inds = np.random.rand(len(X)) < train_prop
-    X_train = X.loc[train_inds,:]
-    y_train =  y[train_inds]
-    X_test = X.loc[~train_inds,:]
-    y_test = y[~train_inds]
-    
-    return X_train, X_test, y_train, y_test
-
-def load_data(reg_id, load_path = '../processed-data/feature-space/data_',
-              train_prop = 0.75, seed = 1, impute = True, version = ''):
-    reg_save = reg_id.lower().replace(' ','-')
-    df = pd.read_csv(load_path+'%s%s.csv' % (reg_save, version))
-    
-    df['gender_female'] = df['gender'].replace({'F':1,'M':0})
-
-    X = df.drop(['personid', 'month', 'personid.1',
-           'month_count', 'duration_months', 'active_month_prop','gender'], axis = 1)
-    if reg_id in list(X['regimen']):
-        X.drop(['regimen'], axis=1, inplace = True)
-    else:
-        X = pd.get_dummies(X, columns = ['regimen'], drop_first = True)
-    
-    y =  df['duration_months']
-    
-    X_train, X_test, y_train, y_test = split_data(X, y, train_prop = train_prop, seed = seed)
-    
-    from sklearn.impute import KNNImputer
-    imp = KNNImputer(n_neighbors=10, weights= 'uniform')
-    imp.fit(X_train)
-    X_train = pd.DataFrame(imp.transform(X_train), columns = X.columns)
-    X_test = pd.DataFrame(imp.transform(X_test), columns = X.columns)
-    
-    return X_train, X_test, y_train, y_test, X.columns
-
 def r_squared(y_true, y_pred, y_mean):
     ss_res = ((y_true - y_pred)**2).sum()
     ss_tot = ((y_true - y_mean)**2).sum()
@@ -247,16 +211,10 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
         if task in ['binary','multiclass']:
             est = iai.OptimalTreeClassifier(
                 random_seed=seed,
-#                 ls_num_hyper_restarts = 5, # 5 is default
-#                 fast_num_support_restarts = 10,
-#                 hyperplane_config={'sparsity':'sqrt'}
             )
         elif task == 'continuous':
             est = iai.OptimalTreeRegressor(
                 random_seed=seed,
-#                 ls_num_hyper_restarts = 5, # 5 is default
-#                 fast_num_support_restarts = 10,
-#                 hyperplane_config={'sparsity':'sqrt'}
             )
         gs = iai.GridSearch(est,
             max_depth = range(2,6), minbucket = [.01,.02,.05]
@@ -437,63 +395,3 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
         # create_and_save_pickle(gs, save_path+".pkl")
 
     return model, performance
-
-
-def run_model_continuous(train_x, y_train, test_x, y_test, model_choice, 
-                         seed = 1, cv_folds = 3, save_folder = '../results/',
-                         column_names = None,
-                         version = ''):
-    
-    assert model_choice in ['elasticnet','rf','xgb','cart','ort']
-    Path(save_folder).mkdir(parents=True, exist_ok=True)
-    # save_path = save_folder+model_choice
-    save_path = save_folder + version
-    
-    if np.all(column_names == None):
-        column_names = train_x.columns
-    
-    print("------------- Running model  ----------------")
-    
-    if model_choice == 'ort':
-        grid = iai.GridSearch(
-            iai.OptimalTreeRegressor(
-                random_seed=seed,
-            ),
-            max_depth=range(3, 8),
-        )
-        grid.fit_cv(train_x, y_train, n_folds = cv_folds)
-        best_res = grid.get_grid_results().query('rank_valid_score == 1')
- 
-        train_pred = grid.predict(train_x)
-        train_mse = metrics.mean_squared_error(y_train, train_pred)
-        print("Train MSE: "+str(train_mse))
-        train_r2= r_squared(y_train, train_pred, y_train.mean())
-        print("Train R2: "+str(train_r2))
-        
-        print("-------------------testing evaluation-----------------------")
-        test_pred = grid.predict(test_x)
-        test_mse = metrics.mean_squared_error(y_test, test_pred)
-        print("Test MSE: "+str(test_mse))
-        test_r2= r_squared(y_test, test_pred, y_test.mean())
-        print("Test R2: "+str(test_r2))
-        
-        lnr = grid.get_learner()
-        lnr.write_html(save_path+'_tree.html')
-        lnr.write_json(save_path+'_tree.json')
-        
-        
-        return lnr
-    
-    
-    # if model_choice == "elasticnet":
-    #     from sklearn.linear_model import ElasticNetCV
-    #     gs = ElasticNetCV(max_iter = 10000, l1_ratio = [.1, .3, .5, .7, .9, .95, .99, 1], cv=cv_folds, verbose = 1)
-    #     np.random.seed(seed)
-    #     gs.fit(train_x, y_train)
-    #     gs.best_params_ = {'l1_ratio':gs.l1_ratio_,'alpha':gs.alpha_}
-    #     gs.param_grid = gs.get_params
-    #     valid_score = np.nan
-    #     print(gs.best_params_)
-    #     model = gs
-        
-        

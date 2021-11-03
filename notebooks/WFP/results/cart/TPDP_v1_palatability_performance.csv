@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
+results/cart/TPDP_v1_palatability_model.csv,1,5,"{'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_samples_leaf': [0.02, 0.04, 0.06], 'max_features': [0.4, 0.6, 0.8, 1.0]}","{'max_depth': 10, 'max_features': 1.0, 'min_samples_leaf': 0.02}",-0.016013557459233496,0.010676479379551228,0.7908556050356943,0.015873275949482357,0.6909820618521263,,,palatability,cart

@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2
-../results/,0,5,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-19297.179957595574,6482.686282203306,0.8406085528048153,22199.73638464915,0.5228000248011846

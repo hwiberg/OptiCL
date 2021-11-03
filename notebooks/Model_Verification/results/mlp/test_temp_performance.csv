@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2
+results/mlp/test_temp_model.csv,1,5,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (10,)}",-33.28994840013816,2.587869266045468e-06,0.9999999999363715,10.948576646836445,0.9997646521375837

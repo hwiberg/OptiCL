@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
+results/rf/TPDP_v1_palatability_model.csv,1,5,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-0.016288398939654825,0.013386400050741746,0.7377702480534164,0.016551194495138304,0.6777844716459509,,,palatability,rf

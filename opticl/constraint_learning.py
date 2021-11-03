@@ -16,7 +16,7 @@ class ConstraintLearning(object):
     grid: learned model.
     '''
     def __init__(self, X, y, learner, algorithm):
-        if not algorithm in ['iai','rf','cart','linear','svm','mlp', 'gbm']: #error!
+        if not algorithm in ['rf','cart','linear','svm','mlp', 'gbm', 'iai', 'iai-single']: #error!
             raise ValueError("invalid algorithm!") 
 
         self.__data = X
@@ -96,7 +96,7 @@ class ConstraintLearning(object):
         '''
         find the node_indices of the leaves
         '''
-        if class_c == 'r':
+        if class_c == 'continuous':
             for node in range(1, num_nodes + 1):
                 if self.__learner.is_leaf(node_index=node):
                     leaf_nodes.append(node)
@@ -110,7 +110,7 @@ class ConstraintLearning(object):
     def constraint_extrapolation_iai(self, class_c):
         '''
         It returns a matrix with all the constraints that describe the tree.
-        When class_c is not 'r' but a number, this function returns only constraints describing
+        When class_c is not 'continuous' but a number, this function returns only constraints describing
         the class class_c.
         When type is 'regression', this function returns constraints for each leaf.
         the column ID represent the reference leaf.
@@ -154,7 +154,7 @@ class ConstraintLearning(object):
                     else:
                         constraint[self.__learner.get_split_feature(node_index=parent_node)] = -1
                 constraint['ID'] = ID
-                if class_c == 'r':
+                if class_c == 'continuous':
                     constraint['prediction'] = self.__learner.get_regression_constant(leaf)
                 else:
                     constraint['prediction'] = class_c  ## THIS IS PROBABLY WRONG
@@ -229,7 +229,7 @@ class ConstraintLearning(object):
             path_leaf = []
             self.__find_path_skTree(0, path_leaf, leaf, children_left, children_right)
             constraints_leaf = self.__get_rule_skTree(leaf, path_leaf, self.get_features_list(), columns, i + 1, class_c, children_left, feature, threshold)
-            if class_c == 'r':
+            if class_c == 'continuous':
                 constraints_leaf['prediction'] = self.__learner.tree_.value[leaf].item()
             else:
                 constraints_leaf['prediction'] = np.argmax(self.__learner.tree_.value[leaf])
@@ -265,7 +265,7 @@ class ConstraintLearning(object):
                 self.__find_path_skTree(0, path_leaf, leaf, children_left, children_right)
                 constraints_leaf = self.__get_rule_skTree(leaf, path_leaf, self.get_features_list(), columns[:-1], i + 1, class_c, children_left, feature, threshold)
                 constraints_leaf['Tree_id'] = tree_id
-                if class_c == 'r':
+                if class_c == 'continuous':
                     # print(tree.tree_.value[leaf])
                     constraints_leaf['prediction'] = tree.tree_.value[leaf].item()
                 else:
@@ -292,7 +292,7 @@ class ConstraintLearning(object):
                 self.__find_path_skTree(0, path_leaf, leaf, children_left, children_right)
                 constraints_leaf = self.__get_rule_skTree(leaf, path_leaf, self.get_features_list(), columns[:-1], i + 1, class_c, children_left, feature, threshold)
                 constraints_leaf['Tree_id'] = tree_id
-                if class_c == 'r':
+                if class_c == 'continuous':
                     # print(tree.tree_.value[leaf])
                     constraints_leaf['prediction'] = tree.tree_.value[leaf].item()
                     constraints_leaf['initial_prediction'] = self.__learner.init_.constant_.item()
@@ -309,7 +309,7 @@ class ConstraintLearning(object):
         :return: constraint: prediction follows the structure Coeff*x+intercept
         '''
         ## Assume a regression model
-        assert class_c == 'r'
+        assert class_c == 'continuous'
         columns = [feature for feature in self.get_features_list()]
         constraint = pd.DataFrame(data=[self.__learner.coef_], columns=columns)
         constraint['intercept'] = self.__learner.intercept_
@@ -324,7 +324,7 @@ class ConstraintLearning(object):
         return df_sub
 
     def constraint_extrapolation_MLP(self, class_c):
-        assert class_c == 'r'
+        assert class_c == 'continuous'
         n_layers = len(self.__learner.coefs_)
         constraints = pd.concat([self.__extract_layer(l) for l in range(n_layers)],axis=0)
         cols_to_move = ['intercept', 'layer', 'node']
@@ -333,7 +333,7 @@ class ConstraintLearning(object):
 
 
     def constraint_extrapolation(self, class_c):
-        if self.__algorithm == "iai":
+        if self.__algorithm in ["iai","iai-single"]:
             constraints = self.constraint_extrapolation_iai(class_c)
         elif self.__algorithm == "cart":
             constraints = self.constraint_extrapolation_skTree(class_c)
