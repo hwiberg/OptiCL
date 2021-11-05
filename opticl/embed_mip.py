@@ -1,8 +1,5 @@
 import pandas as pd
 import numpy as np
-import math
-from sklearn.cluster import KMeans, DBSCAN
-from pyclustering.cluster.xmeans import xmeans, kmeans_plusplus_initializer
 from pyomo import environ
 from pyomo.environ import *
 
@@ -338,25 +335,3 @@ def check_model_master(model_master, print_model = True):
                     print(constraint_lb + row['outcome'] + constraint_ub)
                 else: 
                     print(f"\Warning: {row['outcome']} does not appear as constraint or objective term.")
-
-
-def train_clustering_algorithm(X, algorithm, **kwargs):
-    '''
-    Train a clustering algorithm to use as input to define distinct clusters of the trust region.
-    '''
-    assert algorithm in ['kmean', 'xmean', 'dbscan', 'birch']  # to be extended
-    if algorithm == 'kmean':
-        clustering = KMeans(**kwargs).fit(X)
-    elif algorithm == 'dbscan':
-        clustering = DBSCAN(**kwargs).fit(X)
-    elif algorithm == 'xmean':
-        try:
-            amount_initial_centers = kwargs['amount_initial_centers']
-        except KeyError:
-            amount_initial_centers = 2
-        initial_centers = kmeans_plusplus_initializer(X, amount_initial_centers).initialize()
-        # Create instance of X-Means algorithm. The algorithm will start analysis from 2 clusters, the maximum
-        # number of clusters that can be allocated is 20.
-        clustering = xmeans(X, initial_centers, **kwargs)
-        clustering.process()
-    return clustering
