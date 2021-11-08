@@ -155,8 +155,10 @@ class ConstraintLearning(object):
                 constraint['ID'] = ID
                 if class_c == 'continuous':
                     constraint['prediction'] = self.__learner.get_regression_constant(leaf)
-                else:
-                    constraint['prediction'] = class_c  ## THIS IS PROBABLY WRONG
+                elif class_c == 'binary':
+                    print('Under Development')
+                elif class_c == 'multiclass':
+                    print('Under Development')
 
                 constraints = constraints.append(constraint)
 
@@ -221,8 +223,11 @@ class ConstraintLearning(object):
 
         # Leaves
         leave_id = self.__learner.apply(self.__data)
-
-        columns = ['ID'] + [feature for feature in self.get_features_list()] + ['threshold', 'prediction']
+        if class_c == 'multiclass':
+            columns_classes = [f'prediction_class_{i}' for i in range(len(self.__learner.tree_.value[leave_id[0]][0]))]
+            columns = ['ID'] + [feature for feature in self.get_features_list()] + ['threshold'] + columns_classes
+        else:
+            columns = ['ID'] + [feature for feature in self.get_features_list()] + ['threshold', 'prediction']
         constraints = pd.DataFrame(columns=columns)
         for i, leaf in enumerate(np.unique(leave_id)):
             path_leaf = []
@@ -230,9 +235,13 @@ class ConstraintLearning(object):
             constraints_leaf = self.__get_rule_skTree(leaf, path_leaf, self.get_features_list(), columns, i + 1, class_c, children_left, feature, threshold)
             if class_c == 'continuous':
                 constraints_leaf['prediction'] = self.__learner.tree_.value[leaf].item()
-            else:
-                constraints_leaf['prediction'] = np.argmax(self.__learner.tree_.value[leaf])
+            elif class_c == 'binary':
+                constraints_leaf['prediction'] = self.__learner.tree_.value[leaf][0, 1]/sum(self.__learner.tree_.value[leaf][0])
                 # constraints_leaf['prediction'] = np.round(self.__learner.tree_.value[leaf].item())
+            elif class_c == 'multiclass':
+                # for i, class_name in enumerate(columns_classes):
+                #     constraints_leaf[class_name] = self.__learner.tree_.value[leaf][0, i]/sum(self.__learner.tree_.value[leaf][0])
+                print('Under Development')
             constraints = constraints.append(constraints_leaf)
 
         return constraints
@@ -308,7 +317,7 @@ class ConstraintLearning(object):
         :return: constraint: prediction follows the structure Coeff*x+intercept
         '''
         ## Assume a regression model
-        assert class_c == 'continuous'
+        assert class_c == 'continuous', 'task must be continuous'
         columns = [feature for feature in self.get_features_list()]
         constraint = pd.DataFrame(data=[self.__learner.coef_], columns=columns)
         constraint['intercept'] = self.__learner.intercept_
@@ -323,7 +332,7 @@ class ConstraintLearning(object):
         return df_sub
 
     def constraint_extrapolation_MLP(self, class_c):
-        assert class_c == 'continuous'
+        assert class_c == 'continuous', 'task must be continuous'
         n_layers = len(self.__learner.coefs_)
         constraints = pd.concat([self.__extract_layer(l) for l in range(n_layers)],axis=0)
         cols_to_move = ['intercept', 'layer', 'node']

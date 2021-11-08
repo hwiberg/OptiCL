@@ -105,7 +105,7 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
             param_grid = parameter_grid if parameter_grid is not None else {'C': np.arange(0.001, 1, 0.05), 'penalty': ['l2','l1'], 'max_iter': [1e4]}
             est = LogisticRegression(random_state=seed, multi_class = 'multinomial', solver = 'saga', max_iter = 1e4)
         elif task == 'continuous':
-            from sklearn.linear_model import ElasticNet
+        from sklearn.linear_model import ElasticNet
             param_grid = parameter_grid if parameter_grid is not None else {'alpha': [0.1, 1, 10, 100, 1000],
                   'l1_ratio': np.arange(0.1, 1.0, 0.1)}
             est = ElasticNet(random_state=seed, max_iter = 1e4)
@@ -154,10 +154,10 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
         }
         if task == 'binary':
             from sklearn.ensemble import GradientBoostingClassifier
-            est = GradientBoostingClassifier(random_state=seed)
+            est = GradientBoostingClassifier(random_state=seed, init='zero')
         elif task == 'multiclass':
             from sklearn.ensemble import GradientBoostingClassifier
-            est = GradientBoostingClassifier(random_state=seed)
+            est = GradientBoostingClassifier(random_state=seed, init='zero')
         elif task == 'continuous':
             from sklearn.ensemble import GradientBoostingRegressor
             est = GradientBoostingRegressor(random_state=seed)
