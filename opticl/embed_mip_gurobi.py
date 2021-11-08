@@ -3,8 +3,6 @@ import numpy as np
 import math
 from gurobipy import Model, GRB, quicksum, tupledict
 from sklearn.cluster import KMeans, DBSCAN
-from pyclustering.cluster.xmeans import xmeans, kmeans_plusplus_initializer
-
 
 def optimization_MIP(model, 
                     x,  ## decision variables (already attached to model)
@@ -275,21 +273,3 @@ def check_model_master(model_master):
         if (constraint_lb + constraint_ub) != "":
             print(f"\nEmbedding constraint for {row['outcome']} using {row['model_type']} model.")
             print(constraint_lb + row['outcome'] + constraint_ub)
-
-def train_clustering_algorithm(X, algorithm, **kwargs):
-    assert algorithm in ['kmean', 'xmean', 'dbscan', 'birch']  # to be extended
-    if algorithm == 'kmean':
-        clustering = KMeans(**kwargs).fit(X)
-    elif algorithm == 'dbscan':
-        clustering = DBSCAN(**kwargs).fit(X)
-    elif algorithm == 'xmean':
-        try:
-            amount_initial_centers = kwargs['amount_initial_centers']
-        except KeyError:
-            amount_initial_centers = 2
-        initial_centers = kmeans_plusplus_initializer(X, amount_initial_centers).initialize()
-        # Create instance of X-Means algorithm. The algorithm will start analysis from 2 clusters, the maximum
-        # number of clusters that can be allocated is 20.
-        clustering = xmeans(X, initial_centers, **kwargs)
-        clustering.process()
-    return clustering
