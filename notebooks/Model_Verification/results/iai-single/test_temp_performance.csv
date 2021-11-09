@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,test_score
+results/iai-single/test_temp_model.csv,1,2,"{'minbucket': array([0.01, 0.02, 0.05]), 'max_depth': array([2, 3, 4, 5])}","{'minbucket': 0.05, 'cp': 0.15714285714285714, 'max_depth': 3}",0.8696249999999999,0.9249999999999999,0.777504105090312

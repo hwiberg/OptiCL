@@ -105,7 +105,7 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
             param_grid = parameter_grid if parameter_grid is not None else {'C': np.arange(0.001, 1, 0.05), 'penalty': ['l2','l1'], 'max_iter': [1e4]}
             est = LogisticRegression(random_state=seed, multi_class = 'multinomial', solver = 'saga', max_iter = 1e4)
         elif task == 'continuous':
-        from sklearn.linear_model import ElasticNet
+            from sklearn.linear_model import ElasticNet
             param_grid = parameter_grid if parameter_grid is not None else {'alpha': [0.1, 1, 10, 100, 1000],
                   'l1_ratio': np.arange(0.1, 1.0, 0.1)}
             est = ElasticNet(random_state=seed, max_iter = 1e4)
@@ -290,12 +290,12 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
     if task == 'binary':
         if model_choice != 'svm':
             print("-------------------training evaluation-----------------------")
-            train_pred = gs.predict_proba(train_x)[::,1]
+            train_pred = np.array(gs.predict_proba(train_x))[::,1]
             train_score = metrics.roc_auc_score(y_train, train_pred)
             print("Train Score: "+str(train_score))
         
             print("-------------------testing evaluation-----------------------")
-            test_pred = gs.predict_proba(test_x)[::,1]
+            test_pred = np.array(gs.predict_proba(test_x))[::,1]
             test_score = metrics.roc_auc_score(y_test, test_pred)
             print("Test Score: "+str(test_score))
         
