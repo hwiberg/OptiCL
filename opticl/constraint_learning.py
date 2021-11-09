@@ -322,7 +322,7 @@ class ConstraintLearning(object):
         :return: constraint: prediction follows the structure Coeff*x+intercept
         '''
         ## Assume a regression model
-        assert class_c != 'multiclass', 'task must be continuous or binary'
+        assert class_c != 'multiclass', 'sorry, the multiclass is under development'
         columns = [feature for feature in self.get_features_list()]
         if class_c == 'continuous':
             constraint = pd.DataFrame(data=[self.__learner.coef_], columns=columns)
@@ -340,7 +340,7 @@ class ConstraintLearning(object):
         return df_sub
 
     def constraint_extrapolation_MLP(self, class_c):
-        assert class_c != 'multiclass', 'task must be continuous or binary'
+        assert class_c != 'multiclass', 'sorry, the multiclass is under development'
         n_layers = len(self.__learner.coefs_)
         constraints = pd.concat([self.__extract_layer(l) for l in range(n_layers)],axis=0)
         cols_to_move = ['intercept', 'layer', 'node']

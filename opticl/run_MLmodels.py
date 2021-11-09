@@ -236,6 +236,7 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
             'hidden_layer_sizes': [(10,),(20,),(50,),(100,)]
         }
         if task in ['binary','multiclass']:
+            assert task == 'binary', 'sorry, the multiclass is under development'
             from sklearn.neural_network import MLPClassifier
             est = MLPClassifier(random_state=seed, solver = mlp_solver, max_iter = 10000)
         elif task == 'continuous':
