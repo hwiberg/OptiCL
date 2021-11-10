@@ -1,0 +1,4 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,test_score
+results/linear/test_temp_model.csv,1,5,"{'C': array([0.001, 0.051, 0.101, 0.151, 0.201, 0.251, 0.301, 0.351, 0.401,
+       0.451, 0.501, 0.551, 0.601, 0.651, 0.701, 0.751, 0.801, 0.851,
+       0.901, 0.951]), 'penalty': ['l2', 'l1']}","{'C': 0.051000000000000004, 'penalty': 'l1'}",0.9535714285714285,0.9539285714285715,0.8686371100164203

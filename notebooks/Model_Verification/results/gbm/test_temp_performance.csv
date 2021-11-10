@@ -1,2 +1,2 @@
 save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,test_score
-results/gbm/test_temp_model.csv,0,5,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.2, 'max_depth': 3, 'n_estimators': 20}",0.94375,1.0,0.870279146141215
+results/gbm/test_temp_model.csv,1,5,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.2, 'max_depth': 2, 'n_estimators': 20}",0.9473214285714284,0.9992857142857142,0.8817733990147782
