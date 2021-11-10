@@ -1,2 +1,2 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,test_score
-results/svm/test_temp_model.csv,1,5,"{'C': [0.1, 1, 10, 100]}",{'C': 0.1},0.9142857142857143,0.9623214285714287,0.8111658456486043
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2
+results/svm/test_temp_model.csv,1,5,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-0.00017743395846603547,0.00046325049156073126,0.999999988609943,0.0005432065176370798,0.9999999883233687

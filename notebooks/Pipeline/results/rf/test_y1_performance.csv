@@ -1,2 +1,2 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
-results/rf/test_y1_model.csv,1,5,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 3, 'max_features': 'auto', 'n_estimators': 25}",-18828.216712685233,11342.749890712192,0.32015347870351896,16202.316750371594,-0.07589094251648687,y1,rf
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/rf/test_y1_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 3, 'max_features': 'auto', 'n_estimators': 25}",-18828.216712685233,11342.749890712192,0.32015347870351896,16202.316750371594,-0.07589094251648687,y1,rf

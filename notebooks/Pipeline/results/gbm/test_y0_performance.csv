@@ -1,2 +1,2 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
-results/gbm/test_y0_model.csv,1,5,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.2, 'max_depth': 3, 'n_estimators': 20}",-32.806460030698034,13.050332399896686,0.7871759123739397,26.91508383706447,0.5063064053942319,y0,gbm
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/gbm/test_y0_model.csv,1,5,continuous,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.2, 'max_depth': 3, 'n_estimators': 20}",-32.806460030698034,13.050332399896686,0.7871759123739397,26.91508383706447,0.5063064053942319,y0,gbm
