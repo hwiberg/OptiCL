@@ -1,2 +1,2 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,test_score
-results/cart/test_temp_model.csv,0,5,"{'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_samples_leaf': [0.02, 0.04, 0.06], 'max_features': [0.4, 0.6, 0.8, 1.0]}","{'max_depth': 3, 'max_features': 0.8, 'min_samples_leaf': 0.04}",0.9366071428571427,0.9897321428571428,0.7692939244663382
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2
+results/cart/test_temp_model.csv,1,5,continuous,"{'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_samples_leaf': [0.02, 0.04, 0.06], 'max_features': [0.4, 0.6, 0.8, 1.0]}","{'max_depth': 8, 'max_features': 0.4, 'min_samples_leaf': 0.02}",-25771.61351878471,3469.135217140736,0.9147034950165892,38202.15980910021,0.17881593737979373

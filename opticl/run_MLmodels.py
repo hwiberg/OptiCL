@@ -154,10 +154,10 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
         }
         if task == 'binary':
             from sklearn.ensemble import GradientBoostingClassifier
-            est = GradientBoostingClassifier(random_state=seed)
+            est = GradientBoostingClassifier(random_state=seed, init='zero')
         elif task == 'multiclass':
             from sklearn.ensemble import GradientBoostingClassifier
-            est = GradientBoostingClassifier(random_state=seed)
+            est = GradientBoostingClassifier(random_state=seed, init='zero')
         elif task == 'continuous':
             from sklearn.ensemble import GradientBoostingRegressor
             est = GradientBoostingRegressor(random_state=seed)
@@ -236,6 +236,7 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
             'hidden_layer_sizes': [(10,),(20,),(50,),(100,)]
         }
         if task in ['binary','multiclass']:
+            assert task == 'binary', 'sorry, the multiclass is under development'
             from sklearn.neural_network import MLPClassifier
             est = MLPClassifier(random_state=seed, solver = mlp_solver, max_iter = 10000)
         elif task == 'continuous':
@@ -290,12 +291,12 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
     if task == 'binary':
         if model_choice != 'svm':
             print("-------------------training evaluation-----------------------")
-            train_pred = gs.predict_proba(train_x)[::,1]
+            train_pred = np.array(gs.predict_proba(train_x))[::,1]
             train_score = metrics.roc_auc_score(y_train, train_pred)
             print("Train Score: "+str(train_score))
         
             print("-------------------testing evaluation-----------------------")
-            test_pred = gs.predict_proba(test_x)[::,1]
+            test_pred = np.array(gs.predict_proba(test_x))[::,1]
             test_score = metrics.roc_auc_score(y_test, test_pred)
             print("Test Score: "+str(test_score))
         
@@ -360,7 +361,8 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
         preds_test = pd.DataFrame({'true':y_test,'pred':test_pred})
         
         performance_dict = {'save_path' : save_path, 'seed':seed,
-            'cv_folds': cv_folds,'parameters': param_grid, 'best_params': best_params,
+            'cv_folds': cv_folds,
+            'task':task, 'parameters': param_grid, 'best_params': best_params,
             'valid_score': valid_score,
             'train_score' : train_mse, 'train_r2' : train_r2, 
             'test_score' : test_mse, 'test_r2' : test_r2}

@@ -1,2 +1,2 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
-results/svm/test_y0_model.csv,1,5,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-25.02601419936093,23.674785687552454,0.6139129250274307,20.760584998338988,0.6191961393843304,y0,svm
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,outcome,alg
+results/svm/test_y0_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-25.02601419936093,23.674785687552454,0.6139129250274307,20.760584998338988,0.6191961393843304,y0,svm

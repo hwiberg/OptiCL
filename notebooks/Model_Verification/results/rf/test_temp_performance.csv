@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,test_score
+results/rf/test_temp_model.csv,1,5,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",0.925,0.9982142857142857,0.8653530377668308

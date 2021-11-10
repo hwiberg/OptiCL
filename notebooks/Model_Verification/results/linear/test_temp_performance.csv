@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2
+results/linear/test_temp_model.csv,1,5,continuous,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 0.1, 'l1_ratio': 0.9}",-10.572546977679675,7.255966159543451,0.9998215957248858,10.708154493523471,0.999769820191997
