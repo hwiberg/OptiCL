@@ -262,8 +262,8 @@ def optimization_MIP(model,
                 cluster_samples = cluster.index
                 return sum(model.lam[k] for k in cluster_samples) == model.u[label]
 
-            model.ConstraintClusteredTrustRegion1 = Constraint(np.unique(clustering_model.labels_), rule=constraint_CTR2)
-            model.ConstraintClusteredTrustRegion2 = Constraint(data.columns, rule=constraint_CTR1)
+            model.ConstraintClusteredTrustRegion1 = Constraint(data.columns, rule=constraint_CTR1)
+            model.ConstraintClusteredTrustRegion2 = Constraint(np.unique(clustering_model.labels_), rule=constraint_CTR2)
             model.ConstraintClusteredTrustRegion3 = Constraint(rule=sum(model.u[label] for label in np.unique(clustering_model.labels_)) == 1)
         else:
             model.add_component('ConstraintClusteredTrustRegion1', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
