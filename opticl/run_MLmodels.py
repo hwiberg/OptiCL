@@ -269,6 +269,10 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
         gs.fit_cv(train_x, y_train, n_folds = cv_folds, validation_criterion = metric)
     else: 
         gs.fit(train_x, y_train)
+
+    filename = save_path+model_choice+'_trained.pkl'
+    with open(filename, 'wb') as f:
+        pickle.dump(gs.best_estimator_, f)
         # if len(weights) > 0:
         #     print("Applying sample weights")
         #     gs.fit(train_x, y_train, sample_weight = weights)
