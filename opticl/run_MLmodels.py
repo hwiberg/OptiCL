@@ -270,7 +270,7 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
     else: 
         gs.fit(train_x, y_train)
 
-    filename = save_path+model_choice+'_trained.pkl'
+    filename = 'results/'+model_choice+'_trained.pkl'
     with open(filename, 'wb') as f:
         pickle.dump(gs.best_estimator_, f)
         # if len(weights) > 0:
