@@ -227,11 +227,11 @@ def optimization_MIP(model,
 
                     v_pos_list.append(model.v[(outcome, l, node)])
 
-                    model.add_component('constraint_1_'+str(node)+outcome,
+                    model.add_component('constraint_1_' + str(l) + '_'+str(node)+outcome,
                                         Constraint(rule=model.v[(outcome, l, node)] >= sum(v_input[i] * coeffs_layer[node, i] for i in nodes_input) + intercepts_layer[node]))
-                    model.add_component('constraint_2_' + str(node) + outcome,
+                    model.add_component('constraint_2_' + str(l)+'_' + str(node) + outcome,
                                         Constraint(rule=model.v[(outcome, l, node)] <= M_u * (model.v_ind[(outcome, l, node)])))
-                    model.add_component('constraint_3_' + str(node) + outcome,
+                    model.add_component('constraint_3_' + str(l)+'_' + str(node) + outcome,
                                         Constraint(rule=model.v[(outcome, l, node)] <= sum(v_input[i] * coeffs_layer[node, i] for i in nodes_input) + intercepts_layer[node] - M_l * (1 - model.v_ind[(outcome, l, node)])))
                 ## Prepare nodes_input for next layer
                 nodes_input = nodes
