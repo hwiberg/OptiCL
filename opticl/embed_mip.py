@@ -10,6 +10,7 @@ def optimization_MIP(model,
                      data,  ## dataframe holding all data to be used for convex hull
                      max_violation=None, ## parameter for RF model allowable violation proportion (between 0-1)
                      tr=True,  ## bool variable for the use of trust region constraints
+                     enlarge_tr= [0, 0, 0], ## enlargement option: 0-No enlargement, 1-CH enlargement, 2-Mahalanobis distance; enlargement constraint:  0-constraint, 1-objective penalty; constraint ub/penalty multiplier
                      clustering_model=None):  ## trained clustering algorithm using the entire data (only active if tr = True)
 
     def logistic_x(proba):
@@ -251,7 +252,7 @@ def optimization_MIP(model,
                     lb = logistic_x(proba=lb)
                 model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
 
-    def constraints_tr(model, data, clustering_model):
+    def constraints_tr(model, data, clustering_model, enlarge):
         '''
         Add constraints for the trust region using the convex hull of 'data'.
         If a clustering_model is specified, the solution is constrained to lie within the convex hull of a single cluster.
@@ -260,13 +261,14 @@ def optimization_MIP(model,
         print(f'Generating constraints for the trust region using {len(samples)} samples.')
         model.lam = Var(samples, domain=Reals, name=['lambda_%s' % str(x) for x in samples], bounds=(0,1))
 
-        def constraint_CTR1(model, i):
-            return model.x[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
-
         if clustering_model is not None:
             print('Using the clustering algorithm')
+            if enlarge[0]: print('Enlargement not supported with clustering')
             n_clusters = np.unique(clustering_model.labels_)
             model.u = Var(n_clusters, name=['cluster_%d' % x for x in n_clusters], domain=Binary)
+
+            def constraint_CTR1(model, i):
+                return model.x[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
 
             def constraint_CTR2(model, label):
                 cluster = data[clustering_model.labels_ == label]
@@ -274,11 +276,42 @@ def optimization_MIP(model,
                 return sum(model.lam[k] for k in cluster_samples) == model.u[label]
 
             model.ConstraintClusteredTrustRegion1 = Constraint(data.columns, rule=constraint_CTR1)
-            model.ConstraintClusteredTrustRegion2 = Constraint(np.unique(clustering_model.labels_), rule=constraint_CTR2)
-            model.ConstraintClusteredTrustRegion3 = Constraint(rule=sum(model.u[label] for label in np.unique(clustering_model.labels_)) == 1)
+            model.ConstraintClusteredTrustRegion2 = Constraint(n_clusters, rule=constraint_CTR2)
+            model.ConstraintClusteredTrustRegion3 = Constraint(rule=sum(model.u[label] for label in n_clusters) == 1)
         else:
-            model.add_component('ConstraintClusteredTrustRegion1', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
-            model.add_component('ConstraintClusteredTrustRegion2', Constraint(data.columns, rule=constraint_CTR1))
+            if enlarge[0] != 0:
+                if enlarge[0] == 2:
+                    print('Mahalanobis distance')
+                else:
+                    print('The l1 norm is used for the enlarged CH trust region')
+                    model.eHelp = Var(data.columns, domain=Reals, name=['eHelper_%s' % str(x) for x in data.columns])
+                    model.e = Var(data.columns, domain=Reals, name=['epsilon_%s' % str(x) for x in data.columns])
+                    def constraint_ETR1(model, i):
+                        return model.x[i] + model.e[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+                    def constraint_ETR21(model, i):
+                        return model.eHelp[i] >= model.e[i]
+                    def constraint_ETR22(model, i):
+                        return model.eHelp[i] >= - model.e[i]
+                    model.add_component('constraint_ETR0', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
+                    model.add_component('constraint_ETR1', Constraint(data.columns, rule=constraint_ETR1))
+                    model.add_component('constraint_ETR21', Constraint(data.columns, rule=constraint_ETR21))
+                    model.add_component('constraint_ETR22', Constraint(data.columns, rule=constraint_ETR22))
+
+                    if enlarge[1] == 0:  # Enlarge using a bounding constraint
+                        ub = enlarge[2]
+                        print(f'The trust region is being enlarged with a constraint upper bounded by: {ub}.')
+                        def constraint_ETR3(model):
+                            return sum(model.eHelper[i] for i in data.columns) <= ub
+                        model.add_component('constraint_ETR3',Constraint(rule=constraint_ETR3))
+                    elif enlarge[1] == 1:  # Enlarge using a penalty in the objective function
+                        beta = enlarge[2]
+                        print(f'The trust region is being enlarged with penatly: {beta}.')
+                        model.OBJ.set_value(expr=model.OBJ.expr + beta * sum(model.eHelp[i] for i in data.columns))
+            else:
+                def constraint_TR1(model, i):
+                    return model.x[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+                model.add_component('constraint_TR0', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
+                model.add_component('constraint_TR1', Constraint(data.columns, rule=constraint_TR1))
 
         print('... Trust region defined.')
 
@@ -286,7 +319,7 @@ def optimization_MIP(model,
     N = data.columns
     ## Add trust region constraints (with optional pre-trained cluster model)
     if tr:
-        constraints_tr(model, data, clustering_model)
+        constraints_tr(model, data, clustering_model, enlarge_tr)
 
     ## Initialize variables
     model.y = Var(Any, dense=False, domain=Reals)
