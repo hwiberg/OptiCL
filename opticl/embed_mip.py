@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from pyomo import environ
 from pyomo.environ import *
+from scipy.stats import f
 
 
 def optimization_MIP(model,
@@ -10,7 +11,7 @@ def optimization_MIP(model,
                      data,  ## dataframe holding all data to be used for convex hull
                      max_violation=None, ## parameter for RF model allowable violation proportion (between 0-1)
                      tr=True,  ## bool variable for the use of trust region constraints
-                     enlarge_tr= [0, 0, 0], ## enlargement option: 0-No enlargement, 1-CH enlargement, 2-Mahalanobis distance; enlargement constraint:  0-constraint, 1-objective penalty; constraint ub/penalty multiplier
+                     enlarge_tr= [0, 0, 0], ## enlargement option: 0-No enlargement, 1-CH enlargement, 2-Mahalanobis distance; enlargement constraint:  0-constraint, 1-objective penalty; constraint ub/penalty multiplier/alpha
                      clustering_model=None):  ## trained clustering algorithm using the entire data (only active if tr = True)
 
     def logistic_x(proba):
@@ -282,6 +283,26 @@ def optimization_MIP(model,
             if enlarge[0] != 0:
                 if enlarge[0] == 2:
                     print('Mahalanobis distance')
+                    mu = np.array(np.mean(X, axis=0))
+                    cov = np.matrix(np.cov(X.T))
+                    if elarge[1] == 0:
+                        n = len(data.columns)
+                        dfn = n
+                        dfd = N - n
+                        rv = f(dfn, dfd)
+                        alpha = enlarge[2]
+                        coeff = ((N ** 2 - 1) * n) / ((N - n) * N)
+                        percentile = f.ppf(alpha, dfn, dfd)
+                        RHS = percentile * coeff
+
+                        def ConstraintMD1(model):
+                            return np.dot(np.dot(model.x - np.array(mu), cov.I), model.x - np.array(mu))[0, 0] <= RHS
+                        model.ConstraintMD1 = Constraint(rule=ConstraintMD1)
+                    else:
+                        beta = enlarge[2]
+                        print(f'The Mahalanobis distance is penalized in the objective with penalty coeff: {beta}.')
+                        model.OBJ.set_value(expr=model.OBJ.expr + model.OBJ.sense * beta * np.dot(np.dot(model.x - np.array(mu), cov.I), model.x - np.array(mu))[0, 0])
+
                 else:
                     print('The l1 norm is used for the enlarged CH trust region')
                     model.eHelp = Var(data.columns, domain=Reals, name=['eHelper_%s' % str(x) for x in data.columns])
@@ -303,10 +324,10 @@ def optimization_MIP(model,
                         def constraint_ETR3(model):
                             return sum(model.eHelper[i] for i in data.columns) <= ub
                         model.add_component('constraint_ETR3',Constraint(rule=constraint_ETR3))
-                    elif enlarge[1] == 1:  # Enlarge using a penalty in the objective function
+                    else:  # Enlarge using a penalty in the objective function
                         beta = enlarge[2]
-                        print(f'The trust region is being enlarged with penatly: {beta}.')
-                        model.OBJ.set_value(expr=model.OBJ.expr + beta * sum(model.eHelp[i] for i in data.columns))
+                        print(f'The trust region is being enlarged with penatly coeff: {beta}.')
+                        model.OBJ.set_value(expr=model.OBJ.expr + model.OBJ.sense * beta * sum(model.eHelp[i] for i in data.columns))
             else:
                 def constraint_TR1(model, i):
                     return model.x[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
