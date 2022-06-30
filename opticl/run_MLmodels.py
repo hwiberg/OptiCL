@@ -309,7 +309,7 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
             preds_test = pd.DataFrame({'true':y_test,'pred':test_pred})
             
             performance_dict = {'save_path' : save_path, 'seed':seed,
-                'cv_folds': cv_folds, 'parameters': param_grid, 'best_params': best_params,
+                'cv_folds': cv_folds, 'task':task, 'parameters': param_grid, 'best_params': best_params,
                 'valid_score': valid_score, 'train_score' : train_score,  'test_score' : test_score}
         else:
             print("-------------------training evaluation-----------------------")
@@ -326,7 +326,7 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
             preds_test = pd.DataFrame({'true':y_test,'pred':test_pred})
             
             performance_dict = {'save_path' : save_path, 'seed':seed,
-                'cv_folds': cv_folds, 'parameters': param_grid, 'best_params': best_params,
+                'cv_folds': cv_folds, 'task':task, 'parameters': param_grid, 'best_params': best_params,
                 'valid_score': valid_score, 'train_score' : train_score,  'test_score' : test_score}
        
     elif task == 'multiclass':
@@ -344,7 +344,7 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
         preds_test = pd.DataFrame(test_pred, columns = gs.classes_); preds_test['true'] = y_test
         
         performance_dict = {'save_path' : save_path, 'seed':seed,
-            'cv_folds': cv_folds, 'parameters': param_grid, 'best_params': best_params,
+            'cv_folds': cv_folds, 'task':task, 'parameters': param_grid, 'best_params': best_params,
             'valid_score': valid_score, 'train_score' : train_score,  'test_score' : test_score}
      
     elif task == 'continuous':
