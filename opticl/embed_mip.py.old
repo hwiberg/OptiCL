@@ -2,9 +2,17 @@ import pandas as pd
 import numpy as np
 from pyomo import environ
 from pyomo.environ import *
+from scipy.stats import f
 
 
-def optimization_MIP(model, model_master):
+def optimization_MIP(model,
+                     x,  ## decision variables (already attached to model)
+                     model_master,  ## master table that specifies learned functions for constraints (and parameters)
+                     data,  ## dataframe holding all data to be used for convex hull
+                     max_violation=None, ## parameter for RF model allowable violation proportion (between 0-1)
+                     tr=True,  ## bool variable for the use of trust region constraints
+                     enlarge_tr= [0, 0, 0], ## enlargement option: 0-No enlargement, 1-CH enlargement, 2-Mahalanobis distance; enlargement constraint:  0-constraint, 1-objective penalty; constraint ub/penalty multiplier/alpha
+                     clustering_model=None):  ## trained clustering algorithm using the entire data (only active if tr = True)
 
     def logistic_x(proba):
         if proba == 0:
@@ -199,7 +207,7 @@ def optimization_MIP(model, model_master):
         # Recursively generate constraints linking nodes between layers, starting from input
         nodes_input = range(len(features))
         # v_input = [x[f'col{i}'] for i in nodes_input]
-        v_input = [model.x[i] for i in features]
+        v_input = [x[i] for i in features]
         max_layer = max(weights['layer'])
         for l in range(max_layer + 1):
             df_layer = weights.query('layer == %d' % l)
@@ -245,13 +253,14 @@ def optimization_MIP(model, model_master):
                     lb = logistic_x(proba=lb)
                 model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
 
-    def constraints_tr(model, outcome, data, clustering_model, enlarge):
+    def constraints_tr(model, data, clustering_model, enlarge):
         '''
         Add constraints for the trust region using the convex hull of 'data'.
         If a clustering_model is specified, the solution is constrained to lie within the convex hull of a single cluster.
         '''
         samples = data.index
         print(f'Generating constraints for the trust region using {len(samples)} samples.')
+        model.lam = Var(samples, domain=Reals, name=['lambda_%s' % str(x) for x in samples], bounds=(0,1))
 
         if clustering_model is not None:
             print('Using the clustering algorithm')
@@ -267,44 +276,71 @@ def optimization_MIP(model, model_master):
                 cluster_samples = cluster.index
                 return sum(model.lam[k] for k in cluster_samples) == model.u[label]
 
-            model.add_component(otcome+'ConstraintClusteredTrustRegion1', Constraint(data.columns, rule=constraint_CTR1))
-            model.add_component(otcome+'ConstraintClusteredTrustRegion2', Constraint(n_clusters, rule=constraint_CTR2))
-            model.add_component(otcome+'ConstraintClusteredTrustRegion3', Constraint(rule=sum(model.u[label] for label in n_clusters) == 1))
+            model.ConstraintClusteredTrustRegion1 = Constraint(data.columns, rule=constraint_CTR1)
+            model.ConstraintClusteredTrustRegion2 = Constraint(n_clusters, rule=constraint_CTR2)
+            model.ConstraintClusteredTrustRegion3 = Constraint(rule=sum(model.u[label] for label in n_clusters) == 1)
         else:
-            if enlarge[0] == 1:
-                print('The l1 norm is used for the enlarged CH trust region')
-                def constraint_ETR1(model, i):
-                    return model.x[i] + model.e[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
-                def constraint_ETR21(model, i):
-                    return model.eHelp[i] >= model.e[i]
-                def constraint_ETR22(model, i):
-                    return model.eHelp[i] >= - model.e[i]
-                model.add_component('constraint_ETR0', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
-                model.add_component('constraint_ETR1', Constraint(data.columns, rule=constraint_ETR1))
-                model.add_component('constraint_ETR21', Constraint(data.columns, rule=constraint_ETR21))
-                model.add_component('constraint_ETR22', Constraint(data.columns, rule=constraint_ETR22))
+            if enlarge[0] != 0:
+                if enlarge[0] == 2:
+                    print('Mahalanobis distance')
+                    mu = np.array(np.mean(X, axis=0))
+                    cov = np.matrix(np.cov(X.T))
+                    if elarge[1] == 0:
+                        n = len(data.columns)
+                        dfn = n
+                        dfd = N - n
+                        rv = f(dfn, dfd)
+                        alpha = enlarge[2]
+                        coeff = ((N ** 2 - 1) * n) / ((N - n) * N)
+                        percentile = f.ppf(alpha, dfn, dfd)
+                        RHS = percentile * coeff
 
-                if enlarge[1] == 0:  # Enlarge using a bounding constraint
-                    ub = enlarge[2]
-                    print(f'The trust region is being enlarged with a constraint upper bounded by: {ub}.')
-                    def constraint_ETR3(model):
-                        return sum(model.eHelper[i] for i in data.columns) <= ub
-                    model.add_component(outcome+'constraint_ETR3',Constraint(rule=constraint_ETR3))
-                else:  # Enlarge using a penalty in the objective function
-                    beta = enlarge[2]
-                    print(f'The trust region is being enlarged with penatly coeff: {beta}.')
-                    model.OBJ.set_value(expr=model.OBJ.expr + model.OBJ.sense * beta * sum(model.eHelp[i] for i in data.columns))
+                        def ConstraintMD1(model):
+                            return np.dot(np.dot(model.x - np.array(mu), cov.I), model.x - np.array(mu))[0, 0] <= RHS
+                        model.ConstraintMD1 = Constraint(rule=ConstraintMD1)
+                    else:
+                        beta = enlarge[2]
+                        print(f'The Mahalanobis distance is penalized in the objective with penalty coeff: {beta}.')
+                        model.OBJ.set_value(expr=model.OBJ.expr + model.OBJ.sense * beta * np.dot(np.dot(model.x - np.array(mu), cov.I), model.x - np.array(mu))[0, 0])
+
+                else:
+                    print('The l1 norm is used for the enlarged CH trust region')
+                    model.eHelp = Var(data.columns, domain=Reals, name=['eHelper_%s' % str(x) for x in data.columns])
+                    model.e = Var(data.columns, domain=Reals, name=['epsilon_%s' % str(x) for x in data.columns])
+                    def constraint_ETR1(model, i):
+                        return model.x[i] + model.e[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+                    def constraint_ETR21(model, i):
+                        return model.eHelp[i] >= model.e[i]
+                    def constraint_ETR22(model, i):
+                        return model.eHelp[i] >= - model.e[i]
+                    model.add_component('constraint_ETR0', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
+                    model.add_component('constraint_ETR1', Constraint(data.columns, rule=constraint_ETR1))
+                    model.add_component('constraint_ETR21', Constraint(data.columns, rule=constraint_ETR21))
+                    model.add_component('constraint_ETR22', Constraint(data.columns, rule=constraint_ETR22))
+
+                    if enlarge[1] == 0:  # Enlarge using a bounding constraint
+                        ub = enlarge[2]
+                        print(f'The trust region is being enlarged with a constraint upper bounded by: {ub}.')
+                        def constraint_ETR3(model):
+                            return sum(model.eHelper[i] for i in data.columns) <= ub
+                        model.add_component('constraint_ETR3',Constraint(rule=constraint_ETR3))
+                    else:  # Enlarge using a penalty in the objective function
+                        beta = enlarge[2]
+                        print(f'The trust region is being enlarged with penatly coeff: {beta}.')
+                        model.OBJ.set_value(expr=model.OBJ.expr + model.OBJ.sense * beta * sum(model.eHelp[i] for i in data.columns))
             else:
-                def constraint_CTR1(model, i):
-                    return model.x[i] == sum(model.lam[outcome, k] * data.loc[k, i] for k in samples)
-                model.add_component(outcome+'ConstraintClusteredTrustRegion1', Constraint(rule=sum(model.lam[outcome, k] for k in samples) == 1))
-                model.add_component(outcome+'ConstraintClusteredTrustRegion2', Constraint(data.columns, rule=constraint_CTR1))
+                def constraint_TR1(model, i):
+                    return model.x[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+                model.add_component('constraint_TR0', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
+                model.add_component('constraint_TR1', Constraint(data.columns, rule=constraint_TR1))
 
         print('... Trust region defined.')
 
     ## Identify decision variable indices
-    # N = data.columns
+    N = data.columns
     ## Add trust region constraints (with optional pre-trained cluster model)
+    if tr:
+        constraints_tr(model, data, clustering_model, enlarge_tr)
 
     ## Initialize variables
     model.y = Var(Any, dense=False, domain=Reals)
@@ -312,33 +348,25 @@ def optimization_MIP(model, model_master):
     model.y_viol = Var(Any, dense=False, domain=Binary)
     model.v = Var(Any, dense=False, domain=NonNegativeReals)
     model.v_ind = Var(Any, dense=False, domain=Binary)
-    model.lam = Var(Any, dense=False, domain=Reals, bounds=(0,1))
-
-    model.eHelp = Var(Any, domain=Reals)
-    model.e = Var(Any, domain=Reals)
 
     ## Iterate over all learned models
     for i, row in model_master.iterrows():
-        data = pd.DataFrame(pd.read_csv(row['dataset_path'])).loc[:, row['features']]
-        if row['trust_region']:
-            clustering_model = row['clustering_model']
-            constraints_tr(model, row['outcome'], data, clustering_model, row['enlargement'])
         if row['objective']!=0:
             print(f"Embedding objective function for {row['outcome']}")
         else:
             print(f"Embedding constraints for {row['outcome']}")
-        # For each outcome, call the related embedding function.
+        # For each outcome, call the related embedding function.  
         # Pass in the master model (to attach the constraints to) and the outcome-specific items from model-master
         # RF has one additional argument, the max_violation proportion
         mtype = row['model_type']
         mfile = pd.read_csv(row['save_path'])
         if mtype in ['cart', 'iai', 'iai-single']:
-            constraints_tree(model, row['outcome'], mfile,
+            constraints_tree(model, row['outcome'], mfile, 
                 lb=row['lb'], ub=row['ub'],
                 weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
         elif mtype == 'rf':
-            constraints_rf(model, row['outcome'], mfile,
-                lb=row['lb'], ub=row['ub'],
+            constraints_rf(model, row['outcome'], mfile, 
+                lb=row['lb'], ub=row['ub'], 
                 max_violation=max_violation, ## additional argument required for RF
                 weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
         elif mtype == 'gbm':
@@ -347,15 +375,15 @@ def optimization_MIP(model, model_master):
                             features=row['features'])
         elif mtype == 'mlp':
             constraints_mlp(model, data, row['outcome'], row['task'], mfile,
-                lb=row['lb'], ub=row['ub'],
+                lb=row['lb'], ub=row['ub'], 
                 weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
         elif mtype in ['linear', 'svm']:
             constraints_linear(model, row['outcome'], row['task'], mfile,
                 lb=row['lb'], ub=row['ub'],
                 weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
-        return model
+    return model
 
-def model_selection(performance, outcome_list, scores=False):
+def model_selection(performance, constraints_embed=[], objectives_embed={}, scores=False):
     '''
     Select models using aggregated 'performance' table. The models are selected based on the highest valid_score, assuming higher scores are better (true in sklearn).
     Objectives are passed through a dictionary with an assigned weight (value) per outcome name (key).
@@ -363,11 +391,12 @@ def model_selection(performance, outcome_list, scores=False):
     If 'scores' is true, return the validation scores in the master model file.
     '''
     ## If don't specify any constraints/objectives, assume all constraints
-    outcomes_embed = outcome_list.keys()
+    outcomes_embed = constraints_embed + list(objectives_embed.keys())
     # print(outcomes_embed)
     if outcomes_embed == []:
         outcomes_embed = np.unique(performance['outcome'])
     performance_embed = performance.loc[performance.loc[:, 'outcome'].isin(outcomes_embed), :]
+    # performance['score'] = performance['auc_test'].combine_first(performance['test_r2'])
     performance_embed.loc[:, 'score'] = performance_embed.loc[:, 'valid_score']
     performance_embed.sort_values(['outcome', 'score'], ascending=[True, False], axis=0, inplace=True)
     if scores:
@@ -376,8 +405,8 @@ def model_selection(performance, outcome_list, scores=False):
     else:
         model_master = performance_embed.groupby('outcome').first().reset_index(). \
                            rename({'alg': 'model_type'}, axis=1).loc[:, ['outcome', 'model_type', 'save_path', 'task']]
-    model_master['objective'] = model_master['outcome'].apply(lambda x: outcome_list[x]['outcome_type'][1] \
-        if x in [i for i in outcome_list.keys() if outcome_list[i]['outcome_type'][0]=='objective'] \
+    model_master['objective'] = model_master['outcome'].apply(lambda x: objectives_embed[x] \
+        if x in objectives_embed.keys() \
         else 0)
     print(model_master)
     return model_master
