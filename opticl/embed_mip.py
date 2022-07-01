@@ -288,7 +288,7 @@ def optimization_MIP(model, model_master):
                     ub = enlarge[2]
                     print(f'The trust region is being enlarged with a constraint upper bounded by: {ub}.')
                     def constraint_ETR3(model):
-                        return sum(model.eHelper[i] for i in data.columns) <= ub
+                        return sum(model.eHelp[i] for i in data.columns) <= ub
                     model.add_component(outcome+'constraint_ETR3',Constraint(rule=constraint_ETR3))
                 else:  # Enlarge using a penalty in the objective function
                     beta = enlarge[2]
@@ -314,8 +314,8 @@ def optimization_MIP(model, model_master):
     model.v_ind = Var(Any, dense=False, domain=Binary)
     model.lam = Var(Any, dense=False, domain=Reals, bounds=(0,1))
 
-    model.eHelp = Var(Any, domain=Reals)
-    model.e = Var(Any, domain=Reals)
+    model.eHelp = Var(Any, dense=False, domain=Reals)
+    model.e = Var(Any, dense=False, domain=Reals)
 
     ## Iterate over all learned models
     for i, row in model_master.iterrows():
