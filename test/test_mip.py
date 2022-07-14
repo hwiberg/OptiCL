@@ -14,7 +14,7 @@ np.random.seed(0)
 
 
 code_version = 'refactor'
-alg = 'cart'
+alg = 'gbm'
 outcome = 'palatability_2'
 
 
