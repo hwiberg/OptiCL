@@ -239,14 +239,14 @@ def optimization_MIP(model, model_master, max_violation_group = None):
 
             def constraint_CTR1(model, i):
                 if i in var_features:
-                    return model.x[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+                    return model.x[i] == sum(model.lam[outcome, k] * data.loc[k, i] for k in samples)
                 else:
-                    contex_features[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+                    contex_features[i] == sum(model.lam[outcome, k] * data.loc[k, i] for k in samples)
 
             def constraint_CTR2(model, label):
                 cluster = data[clustering_model.labels_ == label]
                 cluster_samples = cluster.index
-                return sum(model.lam[k] for k in cluster_samples) == model.u[label]
+                return sum(model.lam[outcome, k] for k in cluster_samples) == model.u[label]
 
             model.add_component(otcome+'ConstraintClusteredTrustRegion1', Constraint(data.columns, rule=constraint_CTR1))
             model.add_component(otcome+'ConstraintClusteredTrustRegion2', Constraint(n_clusters, rule=constraint_CTR2))
@@ -256,13 +256,13 @@ def optimization_MIP(model, model_master, max_violation_group = None):
                 print('The l1 norm is used for the enlarged CH trust region')
                 def constraint_ETR1(model, i):
                     if i in var_features:
-                        return model.x[i] + model.e[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
-                    else: contex_features[i] + model.e[i] == sum(model.lam[k] * data.loc[k, i] for k in samples)
+                        return model.x[i] + model.e[i] == sum(model.lam[outcome, k] * data.loc[k, i] for k in samples)
+                    else: contex_features[i] + model.e[i] == sum(model.lam[outcome, k] * data.loc[k, i] for k in samples)
                 def constraint_ETR21(model, i):
                     return model.eHelp[i] >= model.e[i]
                 def constraint_ETR22(model, i):
                     return model.eHelp[i] >= - model.e[i]
-                model.add_component('constraint_ETR0', Constraint(rule=sum(model.lam[k] for k in samples) == 1))
+                model.add_component('constraint_ETR0', Constraint(rule=sum(model.lam[outcome, k] for k in samples) == 1))
                 model.add_component('constraint_ETR1', Constraint(data.columns, rule=constraint_ETR1))
                 model.add_component('constraint_ETR21', Constraint(data.columns, rule=constraint_ETR21))
                 model.add_component('constraint_ETR22', Constraint(data.columns, rule=constraint_ETR22))
@@ -299,7 +299,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
     model.v = Var(Any, dense=False, domain=NonNegativeReals)
     model.v_ind = Var(Any, dense=False, domain=Binary)
     model.lam = Var(Any, dense=False, domain=Reals, bounds=(0,1))
-
     model.eHelp = Var(Any, dense=False, domain=Reals)
     model.e = Var(Any, dense=False, domain=Reals)
 

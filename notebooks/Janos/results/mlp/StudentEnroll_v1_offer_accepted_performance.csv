@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,test_score,auc_train,auc_test,outcome,alg
-results/mlp/StudentEnroll_v1_offer_accepted_model.csv,1,5,binary,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (10,)}",1.0,1.0,0.9987212276214834,,,offer_accepted,mlp

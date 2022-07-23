@@ -12,7 +12,6 @@ from pyomo import environ
 from pyomo.environ import *
 np.random.seed(0)
 
-
 code_version = 'refactor_july23_cart'
 alg_list = ['cart']
 bs=5
@@ -23,7 +22,6 @@ threshold = 0.5
 gr=True
 gr_method = 'violation'
 max_viol = 0.5
-
 
 def normalize(y):
     minimum = 71.969  
