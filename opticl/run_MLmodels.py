@@ -11,6 +11,7 @@ from sklearn import metrics
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
+from sklearn.utils import resample
 import matplotlib
 # matplotlib.use('Agg')
 # import shap
@@ -22,6 +23,7 @@ import random
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from pathlib import Path
+import opticl 
 
 def r_squared(y_true, y_pred, y_mean):
     ss_res = ((y_true - y_pred) ** 2).sum()
@@ -404,3 +406,72 @@ def run_model(train_x, y_train, test_x, y_test, model_choice, outcome, task, cv_
         # create_and_save_pickle(gs, save_path+".pkl")
 
     return model, performance
+
+
+def train_ml_models(outcome_list, version, s = 1, bootstrap_proportion = 0.5, save_models = False, save_path = 'results/'):
+    performance = pd.DataFrame()
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    for outcome_main in outcome_list.keys():
+        print(f'Learning a model for {outcome_main}')
+        outcome_specs = outcome_list[outcome_main]
+        alg_list = outcome_specs['alg_list']
+        task_type = outcome_specs['task_type']
+        bootstrap_iterations = outcome_specs['bootstrap_iterations']
+        bootstrap_yn = True if bootstrap_iterations > 0 else 0
+        ## Iterate over bootstrap iterations (or single loop if none)
+        X_train_all = outcome_specs['X_train']
+        y_train_all = outcome_specs['y_train']
+        X_test = outcome_specs['X_test']
+        y_test = outcome_specs['y_test']
+        for i in range(max(1,bootstrap_iterations)):
+            if not bootstrap_yn: 
+                print("No bootstrap - training on full training data")
+                outcome = outcome_main
+                X_train = X_train_all
+                y_train = y_train_all
+            else:
+                print("Bootstrap iteration %d of %d" % (i+1, bootstrap_iterations))
+                ## If bootstrapping, save outcome with subscript
+                outcome = outcome_main + '_s%d' % i
+                bs_sample = int(bootstrap_proportion*X_train_all.shape[0])
+                X_train, y_train = resample(X_train_all, y_train_all,
+                    replace = True, n_samples = bs_sample, random_state=i)
+            for alg in alg_list:
+                print(f'training {outcome} with {alg}')
+                if not os.path.exists(save_path+alg+'/'):
+                    os.makedirs(save_path+alg+'/')
+                ## Run shallow/small version of RF
+                alg_run = 'rf_shallow' if alg == 'rf' else alg
+                m, perf = run_model(X_train, y_train, X_test, y_test, alg_run, outcome, task = task_type,
+                                       seed = s, cv_folds = 5, 
+                                       # metric = 'r2',
+                                       save = False
+                                      )
+                ## Save model
+                constraintL = opticl.ConstraintLearning(X_train, y_train, m, alg)
+                constraint_add = constraintL.constraint_extrapolation(task_type)
+                constraint_add.to_csv(save_path+'/%s/%s_%s_model.csv' % (alg, version, outcome), index = False)
+                ## Extract performance metrics
+                try:
+                    threshold = outcome_specs['lb'] or outcome_specs['ub']
+                    perf['auc_threshold'] = threshold
+                    perf['auc_train'] = metrics.roc_auc_score(y_train >= threshold, m.predict(X_train))
+                    perf['auc_test'] = metrics.roc_auc_score(y_test >= threshold, m.predict(X_test))
+                except: 
+                    perf['auc_threshold'] = np.nan
+                    perf['auc_train'] = np.nan
+                    perf['auc_test'] = np.nan
+                perf['seed'] = s
+                perf['outcome'] = outcome_main
+                perf['outcome_label'] = outcome
+                perf['alg'] = alg
+                perf['bootstrap_iteration'] = i
+                perf['save_path'] = save_path+'%s/%s_%s_model.csv' % (alg, version, outcome) 
+                perf.to_csv(save_path+'%s/%s_%s_performance.csv' % (alg, version, outcome), index = False)
+                performance = performance.append(perf)
+                print()
+    print('Saving the performance...')
+    performance.to_csv(save_path+'%s_performance.csv' % version, index = False)
+    print('Done!')
+    return performance

@@ -13,9 +13,16 @@ from pyomo.environ import *
 np.random.seed(0)
 
 
-code_version = 'refactor'
-alg = 'cart'
-outcome = 'palatability_2'
+code_version = 'refactor_july23_cart'
+alg_list = ['cart']
+bs=5
+version = 'TPDP_v1'
+outcome = 'palatability'
+Γ = 0.5 ## what is this for?
+threshold = 0.5
+gr=True
+gr_method = 'violation'
+max_viol = 0.5
 
 
 def normalize(y):
@@ -114,59 +121,34 @@ X = dataset.drop(['label'], axis=1, inplace=False)
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.8, random_state=42)
 
-threshold = 0.5
-trust_region = True
-lb = threshold; ub = np.nan;
-weight_objective = 0; 
-task = 'continuous'
 data = X_train
-Γ = 0.5
-alg_list = [alg]
+outcome_list = {'palatability': {'lb':threshold, 'ub':None, 'objective_weight':0,'group_models':gr,
+'task_type': 'continuous', 'alg_list':alg_list, 'bootstrap_iterations':bs,
+                                   'X_train':X_train, 'y_train':y_train, 'X_test':X_test, 'y_test':y_test,
+                                   'dataset_path':'../notebooks/WFP/processed-data/WFP_dataset.csv'}}
 
+performance = opticl.train_ml_models(outcome_list, version)
 
-version = 'TPDP_v1'
-outcome_list = {'palatability_2': {'outcome_type': ['constraint', None], 'task_type': 'continuous', 
-'alg_list':alg_list, 
-                                   'X_train':X_train, 'y_train':y_train, 'X_test':X_test, 'y_test':y_test}}
-constraints_embed = ['palatability_2']
-objectives_embed = {}
-performance = pd.read_csv('../notebooks/WFP/results/%s/%s_%s_performance.csv' % (alg,version, outcome))
-performance.dropna(axis='columns')
-performance['task'] = 'continuous'
-performance.loc[:,'save_path'] = '../notebooks/WFP/' + performance['save_path']
-
+# performance = pd.read_csv('../notebooks/WFP/results/%s/%s_%s_performance.csv' % (alg,version, outcome))
+# performance.dropna(axis='columns')
+# performance['task'] = 'continuous'
+# performance.loc[:,'outcome_label'] = performance['outcome']
 # columns_df = ['algorithm','iteration','price_matrix']+list(X.columns)+['objective_function', 'real_palat', 'pred_palat', 'violation', 'time']
 # solutions_df = pd.DataFrame(columns = columns_df)
 
-model_master = opticl.model_selection(performance.query('alg == "%s"' % alg), 
-                                  outcome_list)
-model_master['lb'] = threshold
-model_master['ub'] = None
+mm = opticl.initialize_model_master(outcome_list)
+mm.loc[outcome,'group_method'] = gr_method
+mm.loc[outcome,'max_violation'] = max_viol
+model_master = opticl.model_selection(mm, performance)
 
-model_master[['lb', 'ub', 'SCM_counterfactuals', 'features', 'trust_region', 'dataset_path',
-              'clustering_model', 'max_violation', 'enlargement', 'var_features', 'contex_features']] = None
-
-model_master['features'] = model_master['features'].astype('object')
-model_master['var_features'] = model_master['var_features'].astype('object')
-model_master['contex_features'] = model_master['contex_features'].astype('object')
-model_master['enlargement'] = model_master['contex_features'].astype('object')
-
-model_master.loc[0, 'lb'] = 0.5
-model_master.loc[0, 'ub'] = None
-model_master.loc[0, 'SCM_counterfactuals'] = None
-model_master.at[0, 'features'] = [col for col in X.columns]
-model_master.loc[0, 'trust_region'] = True
-model_master.loc[0, 'dataset_path'] = '../notebooks/WFP/processed-data/WFP_dataset.csv'
-model_master.loc[0, 'clustering_model'] = None
-model_master.loc[0, 'max_violation'] = None
-model_master.at[0, 'var_features'] = [col for col in X.columns]
-model_master.at[0, 'contex_features'] = {}  # example: {'contextual_feat_name_1': 1, contextual_feat_name_2': 5}
-model_master.at[0, 'enlargement'] = [0]
+# model_master.at[outcome,'model'] = {
+#     '../notebooks/WFP/results/cart/TPDP_v1_palatability_model.csv':'cart',
+#     '../notebooks/WFP/results/linear/TPDP_v1_palatability_model.csv':'linear'
+#     }
 
 ## duplicate model to test ensemble constraint
-model_master.loc[1,:] = model_master.loc[0,:]
-
 opticl.check_model_master(model_master)
+
 
 i = 1
 np.random.seed(i)
@@ -175,7 +157,7 @@ price_random.index = cost_p.index
 
 conceptual_model= init_conceptual_model(price_random)
 MIP_final_model = opticl.optimization_MIP(conceptual_model, model_master)
-MIP_final_model.write('mip_%s_%s.lp' % (code_version, alg))
+MIP_final_model.write('mip_%s.lp' % (code_version))
 opt = SolverFactory('gurobi')
 start_time = time.time()
 results = opt.solve(MIP_final_model) 
@@ -183,18 +165,41 @@ computation_time = time.time() - start_time
 pred_palat = value(MIP_final_model.y[outcome])
 
 print("\nPredicted palatability: %.3f" % pred_palat)
+
+print("\nPredictions - individual models: ")
+sol_y = MIP_final_model.y.get_values()
+for i in sol_y.keys():
+    print("%s: %.3f" % (i, sol_y[i]))
+    try:
+        print("%s violation: %.3f" % (i, MIP_final_model.y_viol.get_values()[i]))
+    except:
+        pass
+
+
 violation_bool, real_palat = check_violation(threshold,  MIP_final_model.x.get_values())
 ## Save solutions
 solution = MIP_final_model.x.get_values()
-
 print("\nSolution: ")
 for i in solution.keys():
     if solution[i] >= 1e-5:
         print("%s: %.3f" % (i, solution[i]))
 
+# for c in MIP_final_model.component_objects(environ.Constraint, active=True):
+#     print(c)
+#     # MIP_final_model.c.lslack()
+#     # MIP_final_model.c.uslack()
+
+# MIP_final_model.lowerBoundViolpalatability['palatability_0'].uslack()
+# MIP_final_model.lowerBoundViolpalatability['palatability_1'].uslack()
+
+if gr:
+    MIP_final_model.GroupAvgpalatability.pprint()
+    if gr_method == 'violation':
+        MIP_final_model.constraintViolpalatability.pprint()
+
 result_save = pd.DataFrame({'variable':list(solution.keys()), 'value':list(solution.values())})
 result_save.loc[len(result_save.index)] = [outcome,pred_palat]
-result_save.to_csv('results_%s_%s.csv' % (code_version, alg), index = False)
+result_save.to_csv('results_%s.csv' % (code_version), index = False)
 
 # solution['algorithm'] = alg
 # solution['iteration'] =i

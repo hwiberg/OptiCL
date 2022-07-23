@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,alg
+results/linear/TPDP_v1_OS_s3_model.csv,1,5,continuous,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 0.1, 'l1_ratio': 0.5}",-3.9787192435327645,2.7682793361977125,0.6231282514216115,8.949568879208751,0.41925241747890996,,,,OS_s3,linear

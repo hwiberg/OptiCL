@@ -67,9 +67,9 @@ def optimization_MIP(model, model_master, max_violation_group = None):
         def constraintTree(model):
             return model.y[outcome] == sum(leaf_values.loc[i, 'prediction'] * model.l[(outcome, str(i))] for i in L)
 
-        model.add_component(outcome+'_1', Constraint(range(n_constr), rule=constraintsTree_1))
+        model.add_component(outcome+'_splits', Constraint(range(n_constr), rule=constraintsTree_1))
         model.add_component('DT'+outcome, Constraint(rule=constraintTree))
-        model.add_component(outcome+'_2', Constraint(rule=constraintsTree_2))
+        model.add_component(outcome+'_oneleaf', Constraint(rule=constraintsTree_2))
 
         # if weight_objective != 0:
         #     model.OBJ.set_value(expr=model.OBJ.expr + weight_objective * model.y[outcome])
@@ -154,22 +154,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
             return model.y[outcome] == np.unique(gbm_table['initial_prediction']).item() + np.unique(gbm_table['learning_rate']).item() * quicksum(model.y[j] for j in T)
 
         model.add_component('GBM'+outcome, Constraint(rule=constraint_gbm))
-        if task == 'binary':
-            lb = logistic_x(proba=lb) if lb != None else None
-            ub = logistic_x(proba=ub) if ub != None else None
-        if weight_objective != 0:
-            model.OBJ.set_value(expr=model.OBJ.expr + weight_objective * model.y[outcome])
-        elif not pd.isna(SCM):
-            model.add_component('scm_' + outcome, Constraint(expr=model.y[outcome] == SCM + model.x[outcome]))
-        else:
-            if not pd.isna(ub):
-                if task == 'binary':
-                    ub = logistic_x(proba=ub)
-                model.add_component('ub_' + outcome, Constraint(expr=model.y[outcome] <= ub))
-            if not pd.isna(lb):
-                if task == 'binary':
-                    lb = logistic_x(proba=lb)
-                model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
 
     def constraints_mlp(model, data, outcome, task, weights, var_features, contex_features, lb=None, ub=None, weight_objective=0, SCM=None, features=None, M_l=-1e5, M_u=1e5):
         '''
@@ -320,40 +304,47 @@ def optimization_MIP(model, model_master, max_violation_group = None):
     model.e = Var(Any, dense=False, domain=Reals)
 
     ## Iterate over all learned models
-    outcomes = model_master['outcome'].unique()
+    outcomes = model_master.index
 
-    for o in outcomes:
-        model_master_sub = model_master.query('outcome == "%s"' % o)
-        grouped = True if model_master_sub.shape[0] > 1 else False
+    for o, row in model_master.iterrows():
+        task=row['task']
+        weight_objective=row['objective']
+        SCM=row['SCM_counterfactuals']
+        lb=row['lb']
+        ub=row['ub']
+        features = row['features']
+        var_features = row['var_features']
+        contex_features = row['contex_features']
+        data = pd.DataFrame(pd.read_csv(row['dataset_path'])).loc[:, row['features']]
+        SCM = row['SCM_counterfactuals']
+        grouped = row['group_models']
+        group_method = row['group_method']
+        max_violation_group = row['max_violation']
+
+        if row['trust_region']:
+            clustering_model = row['clustering_model']
+            constraints_tr(model, o, data, var_features, contex_features, clustering_model, row['enlargement'])
+
+        model_list = model_master.loc[o,'model']
         outcomes_sub = []
+
         ## Iterate over all learned models for each outcome
-        for i, row in model_master_sub.iterrows():
+        for i, mfile_name in enumerate(model_list.keys()):
             # For each outcome, call the related embedding function.
             # Pass in the master model (to attach the constraints to) and the outcome-specific items from model-master
             # RF has one additional argument, the max_violation proportion
-            mtype = row['model_type']
-            mfile = pd.read_csv(row['save_path'])
-            
-            weight_objective=row['objective']
-            SCM=row['SCM_counterfactuals']
-            lb=row['lb']
-            ub=row['ub']
+            mtype = model_list[mfile_name]
+            mfile = pd.read_csv(mfile_name)
 
+            #### 'outcome' tracks the specific outcome (or sub-) that we are embedding. 'o' tracks the master outcome that we are linking across
             if grouped:
-                ## Only works with learned constraint
-                assert (weight_objective == 0) & pd.isna(SCM), "Can only use multiple models for constraints"
-                ## Change outcome to have subscript
+                ## Change outcome to have subscript with index of submodel
                 outcome = '%s_%d' % (o, i)
                 outcomes_sub.append(outcome)
             else:
                 outcome = o
 
-            var_features = row['var_features']
-            contex_features = row['contex_features']
-            data = pd.DataFrame(pd.read_csv(row['dataset_path'])).loc[:, row['features']]
-            if row['trust_region']:
-                clustering_model = row['clustering_model']
-                constraints_tr(model, outcome, data, var_features, contex_features, clustering_model, row['enlargement'])
+
             if row['objective']!=0:
                 print(f"Embedding objective function for {outcome}")
             else:
@@ -362,34 +353,35 @@ def optimization_MIP(model, model_master, max_violation_group = None):
             ## calculate y prediction for row + convert lb/ub for logistic case where needed
             if mtype in ['cart', 'iai', 'iai-single']:
                 constraints_tree(model, outcome, mfile, var_features, contex_features,
-                    lb=row['lb'], ub=row['ub'],
-                    weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
+                    lb=lb, ub=ub,
+                    weight_objective=weight_objective, SCM=SCM, features=features)
             elif mtype == 'rf':
                 constraints_rf(model, outcome, mfile, var_features, contex_features,
-                    lb=row['lb'], ub=row['ub'],
-                    max_violation=max_violation, ## additional argument required for RF
-                    weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
+                    max_violation=None, ## additional argument required for RF
+                    lb=lb, ub=ub,
+                    weight_objective=weight_objective, SCM=SCM, features=features)
             elif mtype == 'gbm':
-                constraints_gbm(model, outcome, row['task'], mfile, var_features, contex_features,
-                    lb=row['lb'], ub=row['ub'], weight_objective=row['objective'], SCM=row['SCM_counterfactuals'],
-                                features=row['features'])
+                constraints_gbm(model, outcome, task, mfile, var_features, contex_features,
+                    lb=lb, ub=ub, 
+                    weight_objective=weight_objective, SCM=SCM, features=features)
             elif mtype == 'mlp':
-                constraints_mlp(model, data, outcome, row['task'], mfile, var_features, contex_features,
-                    lb=row['lb'], ub=row['ub'],
-                    weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
+                constraints_mlp(model, data, outcome, task, mfile, var_features, contex_features,
+                    lb=lb, ub=ub,
+                    weight_objective=weight_objective, SCM=SCM, features=features)
                 if row['task'] == 'binary':
                     lb = logistic_x(proba=lb) if lb != None else None
                     ub = logistic_x(proba=ub) if ub != None else None
             elif mtype in ['linear', 'svm']:
-                constraints_linear(model, outcome, row['task'], mfile, var_features, contex_features,
-                    lb=row['lb'], ub=row['ub'],
-                    weight_objective=row['objective'], SCM=row['SCM_counterfactuals'], features=row['features'])
+                constraints_linear(model, outcome, task, mfile, var_features, contex_features,
+                    lb=lb, ub=ub,
+                    weight_objective=weight_objective, SCM=SCM, features=features)
                 if row['task'] == 'binary':
                     lb = logistic_x(proba=lb) if lb != None else None
                     ub = logistic_x(proba=ub) if ub != None else None
 
         ## Incorporate y into objective or constraint
         if not grouped:
+            print("Adding single model.")
             if weight_objective != 0:
                 model.OBJ.set_value(expr=model.OBJ.expr + weight_objective * model.y[outcome])
             elif not pd.isna(SCM):
@@ -404,23 +396,20 @@ def optimization_MIP(model, model_master, max_violation_group = None):
                 if not pd.isna(lb):
                     model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
         else: 
-            if pd.isna(max_violation_group):
-                print("Adding ensemble constraint with %d models and limit on average." % (len(outcomes_sub)))
-            else:
-                print("Adding ensemble constraint with %d models and violation limit = %.2f" 
-                    % (len(outcomes_sub), max_violation_group))
-            ## aggregate over all individual preds, enumerated in outcomes_sub
+            model.add_component('GroupAvg'+o, Constraint(rule=model.y[o] == 1 / len(outcomes_sub) * quicksum(model.y[j] for j in outcomes_sub)))
+                     ## aggregate over all individual preds, enumerated in outcomes_sub
             ## Compute average (as y[outcome]), either for avg. constraint or objective
             print(o)
-            model.add_component('Ensemble'+o, Constraint(rule=model.y[o] == 1 / len(outcomes_sub) * quicksum(model.y[j] for j in outcomes_sub)))
-
-            if pd.isna(max_violation_group):
+            if group_method == 'average':
+                print("Adding ensemble constraint with %d models and limit on average." % (len(outcomes_sub)))
                 # Constrain average values
                 if not pd.isna(ub):
                     model.add_component('ub_' + o, Constraint(expr=model.y[o] <= ub))
                 if not pd.isna(lb):
                     model.add_component('lb_' + o, Constraint(expr=model.y[o] >= lb))
             else:
+                print("Adding ensemble constraint with %d models and violation limit = %.2f" 
+                    % (len(outcomes_sub), max_violation_group))
                 # Constrain proportion of trees (1 - max_violation_group)
                 if not pd.isna(ub):
                     def constraint_upperBoundViol(model, j):
@@ -430,35 +419,60 @@ def optimization_MIP(model, model_master, max_violation_group = None):
                     def constraint_lowerBoundViol(model, j):
                         return 1 / 1000 * (lb - model.y[j]) <= model.y_viol[(o, str(j))]
                     model.add_component('lowerBoundViol' + o, Constraint(outcomes_sub, rule=constraint_lowerBoundViol))
-                model.add_component('constraintViol'+o, Constraint(rule=1 / len(outcomes_sub) * sum(model.y_viol[(outcome, str(j))] for j in outcomes_sub) <= max_violation_group))
+                model.add_component('constraintViol'+o, Constraint(rule=1 / len(outcomes_sub) * sum(model.y_viol[(o, str(j))] for j in outcomes_sub) <= max_violation_group))
 
         return model
 
 
-def model_selection(performance, outcome_list, scores=False):
+def initialize_model_master(outcome_list):
+    model_master = pd.DataFrame(columns = ['model', 'task', 
+        'objective', 'lb', 'ub', 'features', 'var_features','contex_features',
+       'group_models','group_method','ensemble_weights','max_violation',
+       'trust_region', 'dataset_path', 'clustering_model',  'enlargement',
+        'SCM_counterfactuals',],
+        index = list(outcome_list.keys()))
+    for outcome in model_master.index:
+        outcome_specs = outcome_list[outcome]
+        ## Universal parameters - must be specified for any outcome
+        model_master.loc[outcome,'task'] = outcome_specs['task_type']
+        model_master.loc[outcome,'lb'] = outcome_specs['lb']
+        model_master.loc[outcome,'ub'] = outcome_specs['ub']
+        model_master.loc[outcome,'objective'] = outcome_specs['objective_weight']
+        model_master.loc[outcome,'features'] = outcome_specs['X_train'].columns
+        model_master.loc[outcome,'group_models'] = outcome_specs['group_models']
+        ## Set to defaults - user must change
+        model_master.loc[outcome,'var_features'] = outcome_specs['X_train'].columns
+        model_master.at[outcome,'contex_features'] = {}
+        model_master.loc[outcome,'group_method'] = 'average' if outcome_specs['group_models'] else None
+        model_master.loc[outcome,'ensemble_weights'] = None
+        model_master.loc[outcome,'max_violation'] = 0.25
+        model_master.loc[outcome,'trust_region'] = True
+        model_master.loc[outcome,'dataset_path'] = outcome_specs['dataset_path']
+        model_master.loc[outcome,'clustering_model'] = None
+        # enlargement option: 0-No enlargement, 1-CH enlargement; 
+        # enlargement constraint:  0-constraint, 1-objective penalty; 
+        # constraint ub/penalty multiplier
+        model_master.at[outcome,'enlargement'] = [0]
+        model_master.loc[outcome,'SCM_counterfactuals'] = None
+    return model_master
+
+def model_selection(model_master, performance):
     '''
     Select models using aggregated 'performance' table. The models are selected based on the highest valid_score, assuming higher scores are better (true in sklearn).
     Objectives are passed through a dictionary with an assigned weight (value) per outcome name (key).
     Constraints are passed as a list. The upper and lower bounds must be set after generating the master model file.
-    If 'scores' is true, return the validation scores in the master model file.
     '''
-    ## If don't specify any constraints/objectives, assume all constraints
-    outcomes_embed = outcome_list.keys()
-    # print(outcomes_embed)
-    if outcomes_embed == []:
-        outcomes_embed = np.unique(performance['outcome'])
-    performance_embed = performance.loc[performance.loc[:, 'outcome'].isin(outcomes_embed), :]
+    performance_embed = performance.loc[performance.loc[:, 'outcome'].isin(model_master.index), :]
     performance_embed.loc[:, 'score'] = performance_embed.loc[:, 'valid_score']
     performance_embed.sort_values(['outcome', 'score'], ascending=[True, False], axis=0, inplace=True)
-    if scores:
-        model_master = performance_embed.groupby('outcome').first().reset_index(). \
-            rename({'alg': 'model_type'}, axis=1)
-    else:
-        model_master = performance_embed.groupby('outcome').first().reset_index(). \
-                           rename({'alg': 'model_type'}, axis=1).loc[:, ['outcome', 'model_type', 'save_path', 'task']]
-    model_master['objective'] = model_master['outcome'].apply(lambda x: outcome_list[x]['outcome_type'][1] \
-        if x in [i for i in outcome_list.keys() if outcome_list[i]['outcome_type'][0]=='objective'] \
-        else 0)
+    for outcome in model_master.index:
+        if model_master.loc[outcome,'group_models']:
+            performance_embed.sort_values(['alg','outcome_label'], ascending=[True, True], axis=0, inplace=True)
+            performance_top = performance_embed.loc[performance_embed['outcome']==outcome,:]
+        else: ## if not bootstrap, take first row
+            performance_embed.sort_values(['outcome', 'score'], ascending=[True, False], axis=0, inplace=True)
+            performance_top = performance_embed.loc[performance_embed['outcome']==outcome,:].head(1)
+        model_master.at[outcome, 'model'] = dict(zip(performance_top['save_path'],performance_top['alg']))
     print(model_master)
     return model_master
 
@@ -469,36 +483,71 @@ def check_model_master(model_master, print_model = True):
     Optionally, print out the learned objectives and constraints in a readable format.
     '''
     print("Checking model")
-    if print_model == True:
-        obj_cnt = sum(model_master['objective'] != 0)
-        if obj_cnt == 0:
-            print("No learned objective")
-        else:
-            obj = list(model_master.query('objective != 0')['outcome'])
-            print(f"Learn objective for {obj}; will add to manually set objective.")
+
+    ## Objective/constraint conistency
+    obj_cnt = sum(model_master['objective'] != 0)
+    if obj_cnt == 0:
+        print("No learned objective")
+    else: 
+        print("%d learned objective terms" % obj_cnt)
+    constraint_cnt = sum((model_master['lb'] != None) | (model_master['ub'] != None))
+    if constraint_cnt == 0:
+        print("No learned constraints")
+    else: 
+        print("%d learned constrained outcomes" % constraint_cnt)
 
     ## Cannot have repeat outcome names
-    if len(model_master['outcome'].unique()) != len(model_master['outcome']):
-        print("Duplicate outcome names - will treat as ensemble.")
+    assert len(model_master.index.unique()) == len(model_master.index), "Cannot have duplicate outcome names"
+
     for i, row in model_master.iterrows():
+        print("\nChecking outcome %s" % i)
         ## ASSERT: must select from valid model list
-        assert row['model_type'] in ['iai','iai-single','rf','cart','linear','svm','mlp', 'gbm'], "Invalid model type selected."
+        models = set(row['model'].values())
+        assert np.all([x in ['iai','iai-single','rf','cart','linear','svm','mlp', 'gbm'] for x in models]),\
+            "Invalid model type selected."
+        ## ASSERT: valid lb/ub/objective arguments - otherwise will get unexpected behavior
+        assert isinstance(row['objective'], (int, float)) & (row['objective'] != np.nan), "'objective' parameter must be numeric. Set to 0 if constraint"
+        assert isinstance(row['lb'], (int, float)) | (row['lb'] == None), "'lb' parameter must be numeric if used, or None if objective."
+        assert isinstance(row['ub'], (int, float)) | (row['ub'] == None), "'ub' parameter must be numeric if used, or None if objective."
+
+        ## Check group behavior
+        if row['group_models']:
+            if len(row['model'])<=1:
+                print("Warning: cannot group models for {i}; only one model specified.")
+            print("Embedding outcome with ensemble of %d models, aggregation = %s" % 
+                (len(row['model']), row['group_method']))
+            ### ASSERT: Must use average if ensemble for objective
+            assert (row['objective'] == 0) | (row['group_method'] == 'average'),\
+                "If grouping models for objective, must use group_method = 'average'"
+            assert row['group_method'] in ['average','violation'],\
+                "Unrecognized group_method. Must be in ['average','violation']"
+            if row['ensemble_weights'] != None:
+                print("Warning: code does not yet support weighted average - raw average will be used")
+        else:
+            assert len(row['model'])==1, "Cannot pass multiple models witih group_models = False"
+            print("Embedding outcome with single %s model" % list(models)[0])
+
+        ## Check trust region
+        if row['trust_region']:
+            assert row['dataset_path'] != None, "Must specify dataset to use trust region."
+        if row['enlargement'][0] != 0:
+            assert len(row['enlargement']) > 1, "Illegal enlargement argument - see documentation"
+
         if row['objective'] != 0:
             ## ASSERT: Model cannot be constrained and optimized
-            assert (pd.isna(row['lb']) & pd.isna(row['ub'])), "Outcome cannot appear as both objective term and constraint."
+            assert (pd.isna(row['lb']) & pd.isna(row['ub'])), \
+                "Outcome cannot appear as both objective term and constraint."
             ## Print output for objective
             if print_model:
-                print(f"\nEmbedding objective term for {row['outcome']} using {row['model_type']} model.")
-                print(f"Outcome weight = {row['objective']}")
+                print(f"\nEmbedding objective term for {i}, with outcome weight = {row['objective']}")
         else:
-            ## Print output for constraint
-            if print_model:
-                constraint_lb = f"{round(row['lb'], 3)} <= " if not pd.isna(row['lb']) else ""
-                constraint_ub = f" <= {round(row['ub'], 3)}" if not pd.isna(row['ub']) else ""
-                if (constraint_lb + constraint_ub) != "":
-                    print(f"\nEmbedding constraint for {row['outcome']} using {row['model_type']} model.")
-                    print(constraint_lb + row['outcome'] + constraint_ub)
-                    if row['task'] == 'binary':
-                        print(f"The outcome '{row['outcome']}' is a probability")
-                else: 
-                    print(f"\Warning: {row['outcome']} does not appear as constraint or objective term.")
+            constraint_lb = f"{round(row['lb'], 3)} <= " if not pd.isna(row['lb']) else ""
+            constraint_ub = f" <= {round(row['ub'], 3)}" if not pd.isna(row['ub']) else ""
+            if (constraint_lb + constraint_ub) != "":
+                print(f"\nEmbedding constraint for {i}.")
+                print(constraint_lb + i + constraint_ub)
+                if row['task'] == 'binary':
+                    print(f"The outcome '{i}' is a probability")
+            else: 
+                print(f"\Warning: {i} does not appear as constraint or objective term.")
+

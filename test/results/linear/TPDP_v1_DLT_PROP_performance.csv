@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,alg
+results/linear/TPDP_v1_DLT_PROP_model.csv,1,5,continuous,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 1, 'l1_ratio': 0.30000000000000004}",-0.03133278204975853,0.027599458895841887,0.2682580230820715,0.018747435873918333,0.29205748266210607,0.2,0.7111344537815125,0.7428878153515835,DLT_PROP,linear
