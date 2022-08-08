@@ -12,16 +12,34 @@ from pyomo import environ
 from pyomo.environ import *
 np.random.seed(0)
 
-code_version = 'refactor_july23_cart'
-alg_list = ['cart']
-bs=5
+alg = sys.argv[1]
+bs= int(sys.argv[2])
+
+if alg == 'ensemble':
+    alg_list = ['cart','linear','gbm','svm','rf','mlp']
+    print("Ensemble with methods: ", alg_list)
+else: 
+    alg_list = [alg]
+
+n_iterations = 25
+violation_list = ['average',0.0,0.1,0.25,0.5]
+
+print("Algorithm = %s" % alg)
+print("Bootstrap iterations = %d" % bs)
+code_version = '%s_bs_%d' % (alg, bs)
+
+gr=True
+
 version = 'TPDP_v1'
 outcome = 'palatability'
 Γ = 0.5 ## what is this for?
 threshold = 0.5
-gr=True
-gr_method = 'violation'
-max_viol = 0.5
+
+## set up print to file instead of console
+orig_stdout = sys.stdout
+f = open('experiments/console_%s.txt' % code_version, 'w')
+sys.stdout = f
+print("Code version: ", code_version)
 
 def normalize(y):
     minimum = 71.969  
@@ -108,6 +126,19 @@ def init_conceptual_model(cost_p):
     model.Constraint3 = Constraint(rule=constraint_rule3)
     return model
 
+def init_simple_model():
+    N = range(5)  # foods
+    model = ConcreteModel('SimpleModel')
+    model.x = Var(N, domain=NonNegativeReals)  # variables controlling the food basket
+    def obj_function(model):
+        return sum(food*model.x[food] for food in N)
+    model.OBJ = Objective(rule=obj_function, sense=minimize)
+    def constraint_rule(model):
+        return sum(model.x[food] for food in N) == 1
+    model.Constraint = Constraint(rule=constraint_rule)
+    return model
+
+
 nutr_val = pd.read_excel('../notebooks/WFP/processed-data/Syria_instance.xlsx', sheet_name='nutr_val', index_col='Food')
 nutr_req = pd.read_excel('../notebooks/WFP/processed-data/Syria_instance.xlsx', sheet_name='nutr_req', index_col='Type')
 cost_p = pd.read_excel('../notebooks/WFP/processed-data/Syria_instance.xlsx', sheet_name='FoodCost', index_col='Supplier').iloc[0,:]
@@ -126,86 +157,108 @@ outcome_list = {'palatability': {'lb':threshold, 'ub':None, 'objective_weight':0
                                    'dataset_path':'../notebooks/WFP/processed-data/WFP_dataset.csv'}}
 
 performance = opticl.train_ml_models(outcome_list, version)
+performance.to_csv('results/%s_performance.csv' % version, index = False)
 
-# performance = pd.read_csv('../notebooks/WFP/results/%s/%s_%s_performance.csv' % (alg,version, outcome))
-# performance.dropna(axis='columns')
-# performance['task'] = 'continuous'
-# performance.loc[:,'outcome_label'] = performance['outcome']
-# columns_df = ['algorithm','iteration','price_matrix']+list(X.columns)+['objective_function', 'real_palat', 'pred_palat', 'violation', 'time']
-# solutions_df = pd.DataFrame(columns = columns_df)
+columns_df = ['algorithm','iteration','price_matrix']+list(X.columns)+['objective_function', 'real_palat', 'pred_palat', 'violation', 'time']
+solutions_df = pd.DataFrame(columns = columns_df)
 
-mm = opticl.initialize_model_master(outcome_list)
-mm.loc[outcome,'group_method'] = gr_method
-mm.loc[outcome,'max_violation'] = max_viol
-model_master = opticl.model_selection(mm, performance)
-
-# model_master.at[outcome,'model'] = {
-#     '../notebooks/WFP/results/cart/TPDP_v1_palatability_model.csv':'cart',
-#     '../notebooks/WFP/results/linear/TPDP_v1_palatability_model.csv':'linear'
-#     }
-
-## duplicate model to test ensemble constraint
-opticl.check_model_master(model_master)
-
-
-i = 1
-np.random.seed(i)
-price_random = pd.Series(np.random.random(len(cost_p))*1000)
-price_random.index = cost_p.index
-
-conceptual_model= init_conceptual_model(price_random)
-MIP_final_model = opticl.optimization_MIP(conceptual_model, model_master)
-MIP_final_model.write('mip_%s.lp' % (code_version))
+####### Solve test problem to start up pyomo
+simple_model = init_simple_model()
 opt = SolverFactory('gurobi')
 start_time = time.time()
-results = opt.solve(MIP_final_model) 
+results = opt.solve(simple_model) 
 computation_time = time.time() - start_time
-pred_palat = value(MIP_final_model.y[outcome])
+print("Simple problem runtime = %.3f" % computation_time)
+###### Done with test instance
 
-print("\nPredicted palatability: %.3f" % pred_palat)
+for viol_rule in violation_list:
+    print("\nPreparing model master")
+    if viol_rule == 'average':
+        gr_method = 'average'
+        max_viol = None
+        print("Group method = %s" % (gr_method))
+        gr_string = 'average'
+    else: 
+        gr_method = 'violation'
+        max_viol = float(viol_rule)
+        print("Group method = %s (violation limit = %.2f)" % (gr_method, max_viol))
+        gr_string = 'violation_%.2f' % max_viol
 
-print("\nPredictions - individual models: ")
-sol_y = MIP_final_model.y.get_values()
-for i in sol_y.keys():
-    print("%s: %.3f" % (i, sol_y[i]))
-    try:
-        print("%s violation: %.3f" % (i, MIP_final_model.y_viol.get_values()[i]))
-    except:
-        pass
+
+    mm = opticl.initialize_model_master(outcome_list)
+    mm.loc[outcome,'group_method'] = gr_method
+    mm.loc[outcome,'max_violation'] = max_viol
+    model_master = opticl.model_selection(mm, performance)
+    model_master.to_csv('experiments/model_master_%s_group_%s.csv' % (code_version, gr_string), index = True)
+
+    opticl.check_model_master(model_master)
+
+    for seed in range(n_iterations):
+        print("Running iteration %d" % seed)
+        np.random.seed(seed)
+        price_random = pd.Series(np.random.random(len(cost_p))*1000)
+        price_random.index = cost_p.index
+
+        conceptual_model= init_conceptual_model(price_random)
+        MIP_final_model = opticl.optimization_MIP(conceptual_model, model_master)
+        # MIP_final_model.write('experiments/mip_%s_seed_%d.lp' % (code_version, seed))
+        opt = SolverFactory('gurobi')
+        start_time = time.time()
+        results = opt.solve(MIP_final_model) 
+        computation_time = time.time() - start_time
+        pred_palat = value(MIP_final_model.y[outcome])
 
 
-violation_bool, real_palat = check_violation(threshold,  MIP_final_model.x.get_values())
-## Save solutions
-solution = MIP_final_model.x.get_values()
-print("\nSolution: ")
-for i in solution.keys():
-    if solution[i] >= 1e-5:
-        print("%s: %.3f" % (i, solution[i]))
+        print("\nPredictions - individual models: ")
+        sol_y = MIP_final_model.y.get_values()
+        for i in sol_y.keys():
+            print("%s: %.3f" % (i, sol_y[i]))
+            try:
+                print("%s violation: %.3f" % (i, MIP_final_model.y_viol.get_values()[i]))
+            except:
+                pass
 
-# for c in MIP_final_model.component_objects(environ.Constraint, active=True):
-#     print(c)
-#     # MIP_final_model.c.lslack()
-#     # MIP_final_model.c.uslack()
+        violation_bool, real_palat = check_violation(threshold,  MIP_final_model.x.get_values())
+        ## Save solutions
+        solution = MIP_final_model.x.get_values()
 
-# MIP_final_model.lowerBoundViolpalatability['palatability_0'].uslack()
-# MIP_final_model.lowerBoundViolpalatability['palatability_1'].uslack()
+        # print("\nSolution: ")
+        # for i in solution.keys():
+        #     if solution[i] >= 1e-5:
+        #         print("%s: %.3f" % (i, solution[i]))
 
-if gr:
-    MIP_final_model.GroupAvgpalatability.pprint()
-    if gr_method == 'violation':
-        MIP_final_model.constraintViolpalatability.pprint()
+        # for c in MIP_final_model.component_objects(environ.Constraint, active=True):
+        #     print(c)
+        #     # MIP_final_model.c.lslack()
+        #     # MIP_final_model.c.uslack()
 
-result_save = pd.DataFrame({'variable':list(solution.keys()), 'value':list(solution.values())})
-result_save.loc[len(result_save.index)] = [outcome,pred_palat]
-result_save.to_csv('results_%s.csv' % (code_version), index = False)
+        # MIP_final_model.lowerBoundViolpalatability['palatability_0'].uslack()
+        # MIP_final_model.lowerBoundViolpalatability['palatability_1'].uslack()
 
-# solution['algorithm'] = alg
-# solution['iteration'] =i
-# solution['price_matrix'] = price_random.to_dict()
-# solution['violation'] = violation_bool
-# solution['real_palat'] = real_palat
-# solution['pred_palat'] = pred_palat
-# solution['objective_function'] = value(MIP_final_model.OBJ)
-# solution['time'] = computation_time
-# solutions_df = solutions_df.append(solution, ignore_index=True)
-# print(f"The predicted palatability of the optimal solution is {pred_palat}")
+        if gr:
+            MIP_final_model.GroupAvgpalatability.pprint()
+            if gr_method == 'violation':
+                MIP_final_model.constraintViolpalatability.pprint()
+
+        solution['algorithm'] = alg
+        solution['bootstraps'] = bs
+        solution['viol_rule'] = viol_rule
+        solution['iteration'] = seed
+        solution['price_matrix'] = price_random.to_dict()
+        solution['violation'] = violation_bool
+        solution['real_palat'] = real_palat
+        solution['pred_palat'] = pred_palat
+        solution['objective_function'] = value(MIP_final_model.OBJ)
+        solution['time'] = computation_time
+        solutions_df = solutions_df.append(solution, ignore_index=True)
+
+        print("\nPredicted palatability: %.3f" % pred_palat)
+        print("Real palatability: %.3f" % real_palat)
+        print("Total cost: %.3f" % value(MIP_final_model.OBJ))
+        print("Runtime: %.3f" % computation_time)
+
+solutions_df.to_csv('experiments/solution_%s.csv' % code_version, index = False)
+
+summ = solutions_df.groupby(['algorithm','bootstraps','viol_rule'])[['objective_function','real_palat','pred_palat','violation','time']].mean()
+print(summ)
+
