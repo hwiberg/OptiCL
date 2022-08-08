@@ -11,6 +11,8 @@ import opticl
 # import opticl.embed_mip as em
 from pyomo import environ
 from pyomo.environ import *
+from test_mip_single import *
+
 np.random.seed(0)
 
 alg_list = ['cart','linear','gbm','svm','rf','mlp']
@@ -19,7 +21,7 @@ bs_list = [0,5,10,25,50]
 
 param_list = list(itertools.product(*[alg_list, bs_list, violation_list]))
 
-idx = sys.args[1]
+idx = int(sys.argv[1])
 alg, bs, viol_rule = param_list[idx]
 
 df = run_experiment(alg, bs, viol_rule, n_iterations = 100)
