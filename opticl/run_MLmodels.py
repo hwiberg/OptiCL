@@ -472,6 +472,6 @@ def train_ml_models(outcome_list, version, s = 1, bootstrap_proportion = 0.5, sa
                 performance = performance.append(perf)
                 print()
     print('Saving the performance...')
-    performance.to_csv(save_path+'%s_performance.csv' % version, index = False)
+    # performance.to_csv(save_path+'%s_performance.csv' % version, index = False)
     print('Done!')
     return performance
