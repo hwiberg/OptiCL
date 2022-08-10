@@ -17,7 +17,7 @@ np.random.seed(0)
 
 alg_list = ['cart','linear','gbm','svm','rf','mlp']
 violation_list = ['average',0.0,0.1,0.25,0.5]
-bs_list = [0,5,10,25,50]
+bs_list = [2,5,10,25,50]
 
 param_list = list(itertools.product(*[alg_list, bs_list, violation_list]))
 
