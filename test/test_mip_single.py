@@ -24,7 +24,7 @@ np.random.seed(0)
 
 
 
-def run_experiment(alg, bs, viol_rule, n_iterations = 100):
+def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None):
     if alg == 'ensemble':
         alg_list = ['cart','linear','gbm','svm','rf','mlp']
         print("Ensemble with methods: ", alg_list)
@@ -196,7 +196,12 @@ def run_experiment(alg, bs, viol_rule, n_iterations = 100):
 
     opticl.check_model_master(model_master)
 
-    for seed in range(n_iterations):
+    if fixed_seed == None:
+        iter_list = range(n_iterations)
+    else:
+        iter_list = range(fixed_seed, fixed_seed+1)
+        code_version = code_version+'_seed%s' % fixed_seed
+    for seed in iter_list:
         print("\nRunning iteration %d" % seed)
         np.random.seed(seed)
         price_random = pd.Series(np.random.random(len(cost_p))*1000)
