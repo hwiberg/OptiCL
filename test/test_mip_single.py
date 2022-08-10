@@ -36,7 +36,7 @@ def run_experiment(alg, bs, viol_rule, n_iterations = 100):
     print("Violation rule = %s" % str(viol_rule))
     code_version = '%s_bs_%d_group_%s' % (alg, bs, str(viol_rule))
 
-    version = 'TPDP_v1'
+    version = 'TPDP_robust'
     outcome = 'palatability'
     Γ = 0.5 ## what is this for?
     threshold = 0.5
