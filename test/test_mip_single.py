@@ -201,6 +201,7 @@ def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None):
     else:
         iter_list = range(fixed_seed, fixed_seed+1)
         code_version = code_version+'_seed%s' % fixed_seed
+        print("\nRUNNING SINGLE SEED")
     for seed in iter_list:
         print("\nRunning iteration %d" % seed)
         np.random.seed(seed)
