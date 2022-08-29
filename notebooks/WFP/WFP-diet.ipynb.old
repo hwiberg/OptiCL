@@ -1,0 +1,398 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "084f5229",
+   "metadata": {},
+   "source": [
+    "# The Palatable Diet Problem  \n",
+    "\n",
+    "**Problem Description.** The Diet Problem is the first large-scale optimization problem to be solved with the Simplex algorithm by Jack Laderman in [1947](https://www.mpi-inf.mpg.de/fileadmin/inf/d1/teaching/winter18/Ideen/Materialien/Dantzig-Diet.pdf). The basic formulation of this problem consists of minimizing the cost of a food basket while meeting the specified nutrient requirements. In this notebook, we solve The Palatable Diet Problem (TPDP), where the basic model is extended with a constraint on the food basket palatability. An explicit formula of the palatability constraint is unknown, but we have data on several food baskets and the respective palatability score. First, we define a conceptual model with the *known constraint*. Then, OptiCL is used to learn and embed the palatability constraint.  \n",
+    "(*TPDP is part of a larger optimization problem which simultaneously  optimizes  the  food  basket  to  be  delivered,  the  sourcing  plan,  the  delivery  plan, and  the  transfer  modality  of  a  month-long  food  supply in a Wolrd Food Program setting ([Maragno et al., 2021])*).\n",
+    "\n",
+    "**Objective function:** minimize the total cost of the food basket.  \n",
+    "$\\min_{\\boldsymbol{x}} c^\\top \\boldsymbol{x}$\n",
+    "\n",
+    "*subject to* \n",
+    "\n",
+    "**Nutritional constraints:** for each nutrient $j\\in\\mathcal{N}$, at least meet the minimum required level.  \n",
+    "$ \\sum_{k \\in \\mathcal{K}} nutval_{kj} x_{k} \\geq nutreq_{j}, \\ \\ \\ \\forall l\\in\\mathcal{N},$   \n",
+    "**Constraints on sugar and salt.**</font>  \n",
+    "$ x_{salt} = 5,$   \n",
+    "$ x_{sugar} = 20,$  \n",
+    "**Palatability constraints:** the food basket palatability has to be at least equal to $t$.  \n",
+    "$ y \\geq t,$  \n",
+    "**Learned predictive model:** the palatability is defined using a predictive model.  \n",
+    "$ y = \\hat{h}(\\boldsymbol{x}),$   \n",
+    "**Non negativity constraints.**  \n",
+    "$ x_{k} \\geq 0, \\ \\ \\ \\forall k \\in \\mathcal{K}.$  "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "eb2ea7b0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "from sklearn.utils.extmath import cartesian\n",
+    "import time\n",
+    "import sys\n",
+    "import os\n",
+    "sys.path.append(os.path.abspath('../../src'))\n",
+    "import opticl\n",
+    "from pyomo import environ\n",
+    "from pyomo.environ import *\n",
+    "np.random.seed(0)\n",
+    "from importlib import reload\n",
+    "from imp import reload"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5fd816b1",
+   "metadata": {},
+   "source": [
+    "### Data Loading  \n",
+    "**nutr_val**: nutritional values for each of the 25 foods  \n",
+    "**nutr_req**: 11 nutrition requirements  \n",
+    "**cost_p**: vector of procurement costs  \n",
+    "**dataset**: dataframe of food basket instances and relative palatability score"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "68b75680",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "nutr_val = pd.read_excel('../WFP/processed-data/Syria_instance.xlsx', sheet_name='nutr_val', index_col='Food', engine='openpyxl')\n",
+    "nutr_req = pd.read_excel('../WFP/processed-data/Syria_instance.xlsx', sheet_name='nutr_req', index_col='Type', engine='openpyxl')\n",
+    "cost_p = pd.read_excel('../WFP/processed-data/Syria_instance.xlsx', sheet_name='FoodCost', index_col='Supplier', engine='openpyxl').iloc[0,:]\n",
+    "dataset = pd.read_csv('../WFP/processed-data/WFP_dataset.csv').sample(frac=1)\n",
+    "dataset"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fd465891",
+   "metadata": {},
+   "source": [
+    "# OptiCL: Optimization with Constraint Learning"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f98821c2",
+   "metadata": {},
+   "source": [
+    "## Step 1: Conceptual Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3e0a923a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def init_conceptual_model(cost_p):\n",
+    "    N = list(nutr_val.index)  # foods\n",
+    "    M = nutr_req.columns  # nutrient requirements\n",
+    "\n",
+    "    model = ConcreteModel('TPDP')\n",
+    "\n",
+    "    '''\n",
+    "    Decision variables\n",
+    "    '''\n",
+    "    model.x = Var(N, domain=NonNegativeReals)  # variables controlling the food basket\n",
+    "\n",
+    "    '''\n",
+    "    Objective function.\n",
+    "    '''\n",
+    "    def obj_function(model):\n",
+    "        return sum(cost_p[food].item()*model.x[food] for food in N)\n",
+    "\n",
+    "    model.OBJ = Objective(rule=obj_function, sense=minimize)\n",
+    "\n",
+    "    '''\n",
+    "    Nutrients requirements constraint.\n",
+    "    '''\n",
+    "    def constraint_rule1(model, req):\n",
+    "        return sum(model.x[food] * nutr_val.loc[food, req] for food in N) >= nutr_req[req].item()\n",
+    "    model.Constraint1 = Constraint(M, rule=constraint_rule1)\n",
+    "    '''\n",
+    "    Sugar constraint\n",
+    "    '''\n",
+    "    def constraint_rule2(model):\n",
+    "        return model.x['Sugar'] == 0.2\n",
+    "    model.Constraint2 = Constraint(rule=constraint_rule2)\n",
+    "    '''\n",
+    "    Salt constraint\n",
+    "    '''\n",
+    "    def constraint_rule3(model):\n",
+    "        return model.x['Salt'] == 0.05\n",
+    "    model.Constraint3 = Constraint(rule=constraint_rule3)\n",
+    "    \n",
+    "    return model"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "32f273e3",
+   "metadata": {},
+   "source": [
+    "## Step 2: Data Processing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "10151c52",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y = dataset['label']\n",
+    "X = dataset.drop(['label'], axis=1, inplace=False)\n",
+    "\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.8, random_state=42)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7d0ba744",
+   "metadata": {},
+   "source": [
+    "## Step 3: Learn the predictive models\n",
+    "'alg_list' specifies the list of algorithms that you will consider in the training pipeline. If you have the InterpretableAI license, you can include **iai** (Optimal Trees with Hyperplanes) or **iai-single** (Optimal Trees with single feature splits) in the list. If using IAI, you must specify the metric as 'r2'. Otherwise, the default metric is 'neg_squared_mse'."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "48f1f718",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "version = 'TPDP_v1'\n",
+    "alg_list = ['gbm']\n",
+    "outcome_list = {'palatability_1': {'outcome_type': ['constraint', None], 'task_type': 'continuous', 'alg_list':alg_list, \n",
+    "                                   'X_train':X_train, 'y_train':y_train, 'X_test':X_test, 'y_test':y_test}}"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e884eb74",
+   "metadata": {},
+   "source": [
+    "#### Train models (or skip if pre-saved)  \n",
+    "The training will use only regression models. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2d323391",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import run_MLmodels as runML"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "80fe98fc",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "reload(runML)\n",
+    "performance = pd.DataFrame()\n",
+    "\n",
+    "if not os.path.exists('results/'):\n",
+    "    os.makedirs('results/')\n",
+    "\n",
+    "for outcome in outcome_list.keys():\n",
+    "    print(f'Learning a constraint for {outcome}')\n",
+    "    \n",
+    "    alg_list = outcome_list[outcome]['alg_list']\n",
+    "    task_type = outcome_list[outcome]['task_type']\n",
+    "    for alg in alg_list:\n",
+    "        print(f'Training {alg}')\n",
+    "        X_train = outcome_list[outcome]['X_train']\n",
+    "        y_train = outcome_list[outcome]['y_train']\n",
+    "        X_test = outcome_list[outcome]['X_test']\n",
+    "        y_test = outcome_list[outcome]['y_test']\n",
+    "        \n",
+    "        if not os.path.exists('results/%s/' % alg):\n",
+    "            os.makedirs('results/%s/' % alg)\n",
+    "        s = 1\n",
+    "\n",
+    "        ## Run shallow/small version of RF\n",
+    "        alg_run = 'rf_shallow' if alg == 'rf' else alg\n",
+    "\n",
+    "        m, perf = runML.run_model(X_train, y_train, X_test, y_test, alg_run, outcome, task = task_type,\n",
+    "                               seed = s, cv_folds = 5, \n",
+    "                               # metric = 'r2',\n",
+    "                               save = False\n",
+    "                              )\n",
+    "\n",
+    "        ## Save model\n",
+    "        constraintL = opticl.ConstraintLearning(X_train, y_train, m, alg)\n",
+    "        constraint_add = constraintL.constraint_extrapolation(task_type)\n",
+    "        constraint_add.to_csv('results/%s/%s_%s_model.csv' % (alg, version, outcome), index = False)\n",
+    "\n",
+    "        ## Extract performance metrics\n",
+    "        try:\n",
+    "            perf['auc_train'] = roc_auc_score(y_train >= threshold, m.predict(np.array(X_train)))\n",
+    "            perf['auc_test'] = roc_auc_score(y_test >= threshold, m.predict(np.array(X_train)))\n",
+    "        except: \n",
+    "            perf['auc_train'] = np.nan\n",
+    "            perf['auc_test'] = np.nan\n",
+    "\n",
+    "        perf['seed'] = s\n",
+    "        perf['outcome'] = outcome\n",
+    "        perf['alg'] = alg\n",
+    "        perf['save_path'] = 'results/%s/%s_%s_model.csv' % (alg, version, outcome)\n",
+    "        \n",
+    "            \n",
+    "        perf.to_csv('results/%s/%s_%s_performance.csv' % (alg, version, outcome), index = False)\n",
+    "        \n",
+    "        performance = performance.append(perf)\n",
+    "        print()\n",
+    "print('Saving the performance...')\n",
+    "performance.to_csv('results/%s_performance.csv' % version, index = False)\n",
+    "print('Done!')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "bc506de0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "performance"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8b937d3a",
+   "metadata": {},
+   "source": [
+    "## Step 4: Predictive model selection and Optimization"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "99e47908",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "performance = pd.read_csv('results/%s_performance.csv' % version)\n",
+    "performance.dropna(axis='columns')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b00d0715",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model_master = opticl.model_selection(performance, outcome_list)\n",
+    "model_master[['lb', 'ub', 'SCM_counterfactuals', 'features', 'trust_region', 'dataset_path',\n",
+    "              'clustering_model', 'max_violation', 'enlargement', 'var_features', 'contex_features']] = None\n",
+    "\n",
+    "model_master.loc[0, 'lb'] = 0.5\n",
+    "model_master.loc[0, 'ub'] = None\n",
+    "model_master.loc[0, 'SCM_counterfactuals'] = None\n",
+    "model_master.at[0, 'features'] = [col for col in X.columns]\n",
+    "model_master.loc[0, 'trust_region'] = True\n",
+    "model_master.loc[0, 'dataset_path'] = '../WFP/processed-data/WFP_dataset.csv'\n",
+    "model_master.loc[0, 'clustering_model'] = None\n",
+    "model_master.loc[0, 'max_violation'] = None\n",
+    "model_master.at[0, 'var_features'] = [col for col in X.columns]\n",
+    "model_master.at[0, 'contex_features'] = {}  # example: {'contextual_feat_name_1': 1, contextual_feat_name_2': 5}\n",
+    "\n",
+    "# enlargement option: 0-No enlargement, 1-CH enlargement; \n",
+    "# enlargement constraint:  0-constraint, 1-objective penalty; \n",
+    "# constraint ub/penalty multiplier\n",
+    "model_master.at[0, 'enlargement'] = [1, 0, 0] \n",
+    "model_master"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "6cadcab9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def getSolution(model, X):\n",
+    "    solution = {}\n",
+    "    palatability = 0\n",
+    "    count = 0\n",
+    "    for v in model.getVars():\n",
+    "        if 'x[' in v.varName:\n",
+    "            solution[list(X.columns)[count]]=[v.x]\n",
+    "            print(v.varName)\n",
+    "            count += 1\n",
+    "    return solution"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2b6b20aa",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "result = {}\n",
+    "conceptual_model= init_conceptual_model(cost_p)\n",
+    "MIP_final_model = opticl.optimization_MIP(conceptual_model, model_master)\n",
+    "opt = SolverFactory('gurobi')\n",
+    "print('---------------------Solving the optimization problem---------------------')\n",
+    "results = opt.solve(MIP_final_model) \n",
+    "solution = {}\n",
+    "for food in  list(nutr_val.index):\n",
+    "    if value(MIP_final_model.x[food])*100 > 0.0000001:\n",
+    "        solution[food] = str(np.round(value(MIP_final_model.x[food])*100, 2))+'g'\n",
+    "print('The optimal solution is: \\n', solution)\n",
+    "print(f\"The predicted palatability of the optimal solution is {value(MIP_final_model.y['palatability_1'])}\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "@webio": {
+   "lastCommId": null,
+   "lastKernelId": null
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
