@@ -29,9 +29,9 @@ param_list = list(itertools.product(*[alg_list, bs_list, violation_list]))
 #  68, 69, 70, 71, 72, 73, 74, 115, 116, 117, 118, 119, 120, 121, 122, 
 #  123, 124, 140, 144, 145, 147, 148, 149]
 
-failed_ids_25 = [140, 144, 115, 116, 117, 118, 119,
-failed_ids_50 = [145, 147, 148, 149, 120, 121, 122, 123, 124]
-failed_ids_gbm = [62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,]
+failed_ids = [140, 144, 115, 116, 117, 118, 119]
+#failed_ids = [145, 147, 148, 149, 120, 121, 122, 123, 124]
+#failed_ids = [62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,]
 
 # patch_list = list(itertools.product(*[failed_ids, range(100)]))
 # idx = int(sys.argv[1])
@@ -40,7 +40,7 @@ failed_ids_gbm = [62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,]
 # df = run_experiment(alg, bs, viol_rule, fixed_seed = seed)
 
 seed = int(sys.argv[1])
-for idx in failed_ids_v2:
+for idx in failed_ids:
 	print("Failed ID = %d" % idx)
 	alg, bs, viol_rule = param_list[idx]
 	df = run_experiment(alg, bs, viol_rule, fixed_seed = seed)

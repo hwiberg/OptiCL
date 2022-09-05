@@ -196,6 +196,7 @@ def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None):
     mm = opticl.initialize_model_master(outcome_list)
     mm.loc[outcome,'group_method'] = gr_method
     mm.loc[outcome,'max_violation'] = max_viol
+    model_master = opticl.model_selection(mm, performance)
     model_master.to_csv('experiments/model_master_%s.csv' % (code_version), index = True)
 
     opticl.check_model_master(model_master)
@@ -260,8 +261,7 @@ def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None):
     solutions_df.to_csv('experiments/solution_%s.csv' % code_version, index = False)
     return solutions_df
 
-alg = 'cart'
-bs = 0
-viol_rule = 'average'
-run_experiment(alg, bs, viol_rule, n_iterations = 5)
-
+for alg in  ['ensemble','mlp']:
+    bs = 0
+    viol_rule = 'average'
+    run_experiment(alg, bs, viol_rule, n_iterations = 100)
