@@ -12,26 +12,28 @@ from pyomo import environ
 from pyomo.environ import *
 np.random.seed(0)
 
-alg = 'cart'
+# alg = 'cart'
 n_iterations = 1
 fixed_seed = 1
 viol_rule = 0.5
 
 
-# ### Example with grouping/bootstrap
+# ### Example with grouping/bootstrap of single model
 # gr=True
 # bs = 2
+# alg = 'cart'
+# alg_list = [alg]
 
-### Example with single model
+### Example with ensemble of learners (only one estimator per learner supported, so bs = 0)
 gr=False
 bs = 0
+alg = 'ensemble'
+alg_list = ['cart','linear']
 
-alg_list = [alg]
-
-print("Algorithm = %s" % alg)
+print("Algorithm(s) = %s" % str(alg_list))
 print("Bootstrap iterations = %d" % bs)
 print("Violation rule = %s" % str(viol_rule))
-code_version = 'simple_example'
+code_version = 'simple_example_2learners'
 
 version = 'TPDP_robust'
 outcome = 'palatability'
@@ -185,10 +187,9 @@ model_master.to_csv('experiments/model_master_%s.csv' % (code_version), index = 
 opticl.check_model_master(model_master)
 
 
-print("\nRunning iteration %d" % seed)
-
 seed = fixed_seed
 
+print("\nRunning iteration %d" % seed)
 np.random.seed(seed)
 price_random = pd.Series(np.random.random(len(cost_p))*1000)
 price_random.index = cost_p.index
