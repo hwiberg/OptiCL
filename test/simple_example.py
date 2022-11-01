@@ -25,7 +25,7 @@ viol_rule = 0.5
 # alg_list = [alg]
 
 ### Example with ensemble of learners (only one estimator per learner supported, so bs = 0)
-gr=False
+gr=True
 bs = 0
 alg = 'ensemble'
 alg_list = ['cart','linear']
