@@ -420,7 +420,7 @@ def optimization_MIP(model, model_master, max_violation_group = None):
                     model.add_component('lowerBoundViol' + o, Constraint(outcomes_sub, rule=constraint_lowerBoundViol))
                 model.add_component('constraintViol'+o, Constraint(rule=1 / len(outcomes_sub) * sum(model.y_viol[(o, str(j))] for j in outcomes_sub) <= max_violation_group))
 
-        return model
+    return model
 
 
 def initialize_model_master(outcome_list):
