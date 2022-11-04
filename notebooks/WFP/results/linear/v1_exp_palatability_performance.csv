@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
-../results/linear/v1_exp_palatability_model.csv,0,5,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 0.1, 'l1_ratio': 0.1}",-0.04613342351179124,0.04607530099028034,0.09350638512100418,0.044514123304073464,0.0958441536049589,,,palatability,linear

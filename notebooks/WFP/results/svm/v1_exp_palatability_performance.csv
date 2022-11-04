@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
-../results/svm/v1_exp_palatability_model.csv,0,5,"{'C': [0.1, 1, 10, 100]}",{'C': 10},-0.018580129662125272,0.01847842673117702,0.6364521666748333,0.018164362181371692,0.6310516069217678,,,palatability,svm

@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
-results/svm/TPDP_v1_palatability_model.csv,1,5,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-0.019033853647175435,0.018144694187585866,0.6445587582978582,0.019586695288285563,0.6186899155297516,,,palatability,svm

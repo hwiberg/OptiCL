@@ -213,7 +213,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
     ## Identify decision variable indices
     # N = data.columns
     ## Add trust region constraints (with optional pre-trained cluster model)
-
     ## Initialize variables
     model.y = Var(Any, dense=False, domain=Reals)
     model.l = Var(Any, dense=False, domain=Binary)

@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_train,auc_test,outcome,alg
-../results/rf/WFP_v1_palatability_model.csv,0,5,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-0.016944164595548088,0.015876625838562,0.68659494933928,0.01642396596404141,0.6898116870201995,,,palatability,rf
