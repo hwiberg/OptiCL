@@ -24,24 +24,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
         intercept = coefficients['intercept'][0]
         coeff = coefficients.drop(['intercept'], axis=1, inplace=False).loc[0, :]
         model.add_component('LR'+outcome, Constraint(expr=model.y[outcome] == sum(model.x[i] * coeff.loc[i] for i in var_features) + sum(contex_features[i] * coeff.loc[i] for i in contex_features.keys()) + intercept))
-        
-        # if weight_objective != 0:
-        #     model.OBJ.set_value(expr=model.OBJ.expr + weight_objective * model.y[outcome])
-        # elif not pd.isna(SCM):
-        #     if outcome in var_features:
-        #         model.add_component('scm_' + outcome, Constraint(expr=model.y[outcome] == SCM + model.x[outcome]))
-        #     else:
-        #         if outcome in var_features:
-        #             model.add_component('scm_' + outcome, Constraint(expr=model.y[outcome] == SCM + contex_features[outcome]))
-        # else:
-        #     if not pd.isna(ub):
-        #         if task == 'binary':
-        #             ub = logistic_x(proba=ub)
-        #         model.add_component('ub_' + outcome, Constraint(expr=model.y[outcome] <= ub))
-        #     if not pd.isna(lb):
-        #         if task == 'binary':
-        #             lb = logistic_x(proba=lb)
-        #         model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
 
     def constraints_tree(model, outcome, tree_table, var_features, contex_features, lb=None, ub=None, M=1e5, weight_objective=0, SCM=None, features=None):
         '''
@@ -71,20 +53,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
         model.add_component('DT'+outcome, Constraint(rule=constraintTree))
         model.add_component(outcome+'_oneleaf', Constraint(rule=constraintsTree_2))
 
-        # if weight_objective != 0:
-        #     model.OBJ.set_value(expr=model.OBJ.expr + weight_objective * model.y[outcome])
-        # elif not pd.isna(SCM):
-        #     if outcome in var_features:
-        #         model.add_component('scm_' + outcome, Constraint(expr=model.y[outcome] == SCM + model.x[outcome]))
-        #     else:
-        #         if outcome in var_features:
-        #             model.add_component('scm_' + outcome, Constraint(expr=model.y[outcome] == SCM + contex_features[outcome]))
-        # else:
-        #     if not pd.isna(ub):
-        #         model.add_component('ub_'+outcome, Constraint(expr=model.y[outcome] <= ub))
-        #     if not pd.isna(lb):
-        #         model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
-
     def constraints_rf(model, outcome, forest_table, var_features, contex_features, ub=None, lb=None, max_violation=None, weight_objective=0, SCM=None, features=None):
         '''
         Embed a trained random forest predictive model for 'outcome' into the master 'model'.
@@ -104,33 +72,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
 
         ## Compute average (as y[outcome]), either for avg. constraint or objective
         model.add_component('RF'+outcome, Constraint(rule=model.y[outcome] == 1 / len(T) * quicksum(model.y[j] for j in T)))
-        if weight_objective != 0:
-            model.OBJ.set_value(expr=model.OBJ.expr + weight_objective * model.y[outcome])
-        elif not pd.isna(SCM):
-            if outcome in var_features:
-                model.add_component('scm_' + outcome, Constraint(expr=model.y[outcome] == SCM + model.x[outcome]))
-            else:
-                if outcome in var_features:
-                    model.add_component('scm_' + outcome,
-                                        Constraint(expr=model.y[outcome] == SCM + contex_features[outcome]))
-        else:
-            if pd.isna(max_violation):
-                # Constrain average values
-                if not pd.isna(ub):
-                    model.add_component('ub_' + outcome, Constraint(expr=model.y[outcome] <= ub))
-                if not pd.isna(lb):
-                    model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
-            else:
-                # Constrain proportion of trees (1 - max_violation)
-                if not pd.isna(ub):
-                    def constraint_upperBoundViol(model, j):
-                        return 1 / 100 * (model.y[j] - ub) <= model.y_viol[(outcome, str(j))]
-                    model.add_component('upperBoundViol'+outcome, Constraint(T, rule=constraint_upperBoundViol))
-                if not pd.isna(lb):
-                    def constraint_lowerBoundViol(model, j):
-                        return 1 / 100 * (lb - model.y[j]) <= model.y_viol[(outcome, str(j))]
-                    model.add_component('lowerBoundViol' + outcome, Constraint(T, rule=constraint_lowerBoundViol))
-                model.add_component('constraintViol'+outcome, Constraint(rule=1 / len(T) * sum(model.y_viol[(outcome, str(j))] for j in T) <= max_violation))
 
     def constraints_gbm(model, outcome, task, gbm_table, var_features, contex_features, ub=None, lb=None, weight_objective=0, SCM=None, features=None):
         '''
@@ -203,25 +144,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
                 ## Prepare nodes_input for next layer
                 nodes_input = nodes
                 v_input = v_pos_list
-
-        # if weight_objective != 0:
-        #     model.OBJ.set_value(expr=model.OBJ.expr + weight_objective * model.y[outcome])
-        # elif not pd.isna(SCM):
-        #     if outcome in var_features:
-        #         model.add_component('scm_' + outcome, Constraint(expr=model.y[outcome] == SCM + model.x[outcome]))
-        #     else:
-        #         if outcome in var_features:
-        #             model.add_component('scm_' + outcome,
-        #                                 Constraint(expr=model.y[outcome] == SCM + contex_features[outcome]))
-        # else:
-        #     if not pd.isna(ub):
-        #         if task == 'binary':
-        #             ub = logistic_x(proba=ub)
-        #         model.add_component('ub_' + outcome, Constraint(expr=model.y[outcome] <= ub))
-        #     if not pd.isna(lb):
-        #         if task == 'binary':
-        #             lb = logistic_x(proba=lb)
-        #         model.add_component('lb_' + outcome, Constraint(expr=model.y[outcome] >= lb))
 
     def constraints_tr(model, outcome, data, var_features, contex_features, clustering_model, enlarge):
         '''
@@ -304,7 +226,6 @@ def optimization_MIP(model, model_master, max_violation_group = None):
 
     ## Iterate over all learned models
     outcomes = model_master.index
-
     for o, row in model_master.iterrows():
         task=row['task']
         weight_objective=row['objective']

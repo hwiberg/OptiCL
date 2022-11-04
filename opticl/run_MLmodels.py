@@ -415,7 +415,7 @@ def train_ml_models(outcome_list, version, s = 1, bootstrap_proportion = 0.5, sa
     for outcome_main in outcome_list.keys():
         print(f'Learning a model for {outcome_main}')
         outcome_specs = outcome_list[outcome_main]
-        alg_list = outcome_specs['alg_list']
+        alg_list = outcome_specs['alg_list'].keys()
         task_type = outcome_specs['task_type']
         bootstrap_iterations = outcome_specs['bootstrap_iterations']
         bootstrap_yn = True if bootstrap_iterations > 0 else 0
@@ -444,9 +444,10 @@ def train_ml_models(outcome_list, version, s = 1, bootstrap_proportion = 0.5, sa
                 ## Run shallow/small version of RF
                 alg_run = 'rf_shallow' if alg == 'rf' else alg
                 m, perf = run_model(X_train, y_train, X_test, y_test, alg_run, outcome, task = task_type,
-                                       seed = s, cv_folds = 5, 
-                                       # metric = 'r2',
-                                       save = False
+                                    seed = s, cv_folds = 5,
+                                    parameter_grid = outcome_specs['alg_list'][alg],
+                                    # metric = 'r2',
+                                    save = False
                                       )
                 ## Save model
                 constraintL = opticl.ConstraintLearning(X_train, y_train, m, alg)
