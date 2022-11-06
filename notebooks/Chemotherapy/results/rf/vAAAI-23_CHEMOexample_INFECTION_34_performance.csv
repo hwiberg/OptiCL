@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/rf/vAAAI-23_CHEMOexample_INFECTION_34_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 3, 'max_features': 'auto', 'n_estimators': 10}",-0.007467969144350115,0.0025581255505708654,0.6625620320226231,0.0036096248058588415,-0.24089731617350552,0.075,0.8472744360902256,0.5912518853695324,INFECTION_34,INFECTION_34,rf,0

@@ -4,7 +4,7 @@ from pyomo import environ
 from pyomo.environ import *
 
 
-def optimization_MIP(model, model_master, max_violation_group = None):
+def optimization_MIP(model, model_master, global_trust_region = None):
 
     def logistic_x(proba):
         if proba == 0:
@@ -223,6 +223,15 @@ def optimization_MIP(model, model_master, max_violation_group = None):
     model.eHelp = Var(Any, dense=False, domain=Reals)
     model.e = Var(Any, dense=False, domain=Reals)
 
+    if global_trust_region != None:
+        constraints_tr(model, 
+            outcome = 'global', 
+            data = global_trust_region['data'],
+            var_features = global_trust_region['data'].columns, 
+            contex_features = None, 
+            clustering_model = global_trust_region['clustering_model'], 
+            enlarge = global_trust_region['enlargement'])
+
     ## Iterate over all learned models
     outcomes = model_master.index
     for o, row in model_master.iterrows():
@@ -392,7 +401,6 @@ def model_selection(model_master, performance):
             performance_embed.sort_values(['outcome', 'score'], ascending=[True, False], axis=0, inplace=True)
             performance_top = performance_embed.loc[performance_embed['outcome']==outcome,:].head(1)
         model_master.at[outcome, 'model'] = dict(zip(performance_top['save_path'],performance_top['alg']))
-    print(model_master)
     return model_master
 
 

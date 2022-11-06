@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/cart/vAAAI-23_CHEMOexample_OS_model.csv,1,5,continuous,"{'max_depth': [3, 4, 5, 6, 7, 8, 9, 10], 'min_samples_leaf': [0.02, 0.04, 0.06], 'max_features': [0.4, 0.6, 0.8, 1.0]}","{'max_depth': 9, 'max_features': 0.6, 'min_samples_leaf': 0.04}",-7.634686285459184,2.677540495706479,0.6245307850448949,14.39376716117995,0.2610949348332674,,,,OS,OS,cart,0

@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/rf/vAAAI-23_CHEMOexample_Neutro4_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-0.025300027095203736,0.008644331282212685,0.699026857156254,0.013909708286150567,0.06843321133683689,0.15,0.8575730201746462,0.6536585365853659,Neutro4,Neutro4,rf,0

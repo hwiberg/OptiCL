@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/rf/vAAAI-23_CHEMOexample_DLT_PROP_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 3, 'max_features': 'auto', 'n_estimators': 25}",-0.02705751522657431,0.013322680881295186,0.5435497937432003,0.025273454578621846,0.23169621323078016,0.6373041536518852,0.9040697674418604,0.7040650406504064,DLT_PROP,DLT_PROP,rf,0
