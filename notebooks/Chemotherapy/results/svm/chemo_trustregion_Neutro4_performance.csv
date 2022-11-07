@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/svm/chemo_trustregion_Neutro4_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 0.1},-0.03206860242056877,0.015239562519058432,0.4693980509096459,0.014746624030059207,0.012382940842603829,0.15,0.8389039445950015,0.7528455284552846,Neutro4,Neutro4,svm,0

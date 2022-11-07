@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/svm/chemo_trustregion_OTHER_34_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-0.0016910932197150696,0.00046229989731508785,0.42962429431404814,0.001202214710173927,0.09184749833712536,0.1008105757875056,0.759692513368984,0.7675438596491229,OTHER_34,OTHER_34,svm,0

@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/linear/chemo_trustregion_Neutro4_model.csv,1,5,continuous,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 1, 'l1_ratio': 0.4}",-0.02652905479883923,0.02150490628718667,0.251255068725447,0.010468936836548906,0.29886999289182714,0.15,0.7377295995182174,0.8390243902439024,Neutro4,Neutro4,linear,0

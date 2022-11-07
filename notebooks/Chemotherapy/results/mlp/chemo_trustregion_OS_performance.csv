@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/mlp/chemo_trustregion_OS_model.csv,1,5,continuous,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (10,)}",-79.64750671580853,0.5728318489611465,0.9196722794760297,65.24223012231057,-2.3492145426782733,,,,OS,OS,mlp,0

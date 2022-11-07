@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/rf/chemo_trustregion_GINONV_34_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 3, 'max_features': 'auto', 'n_estimators': 25}",-0.005591967578173996,0.002718863219937887,0.520871028735516,0.005472237611392356,0.25999930895175904,0.106,0.8594924812030075,0.6973684210526315,GINONV_34,GINONV_34,rf,0

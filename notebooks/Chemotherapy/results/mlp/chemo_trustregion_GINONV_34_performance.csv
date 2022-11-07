@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/mlp/chemo_trustregion_GINONV_34_model.csv,1,5,continuous,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (10,)}",-1.3606815996641992,0.00507020551807911,0.10650806698828652,0.007953144059667893,-0.07548913590815176,0.106,0.6494360902255638,0.5233918128654971,GINONV_34,GINONV_34,mlp,0
