@@ -107,8 +107,8 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
         elif task == 'continuous':
             from sklearn.linear_model import ElasticNet
             param_grid = parameter_grid if parameter_grid is not None else {'alpha': [0.1, 1, 10, 100, 1000],
-                                                                            'l1_ratio': np.arange(0.1, 1.0, 0.1)}
-            est = ElasticNet(random_state=seed, max_iter=1e4)
+                                                                            'l1_ratio': np.arange(0.1, 1.0, 0.2)}
+            est = ElasticNet(random_state=seed)
         gs = GridSearchCV(estimator=est, param_grid=param_grid, scoring=gs_metric, cv=cv_folds)
 
     elif model_choice == "cart":
