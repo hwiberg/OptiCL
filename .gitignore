@@ -2,3 +2,8 @@
 *.pyc
 *checkpoint.ipynb
 *.ipynb_checkpoints*
+opticl.egg-info/
+.python-version
+build
+dist
+
