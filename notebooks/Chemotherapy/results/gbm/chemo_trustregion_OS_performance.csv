@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/gbm/chemo_trustregion_OS_model.csv,1,5,continuous,"{'learning_rate': [0.01, 0.025, 0.05, 0.075, 0.1, 0.15, 0.2], 'max_depth': [2, 3, 4, 5], 'n_estimators': [20]}","{'learning_rate': 0.1, 'max_depth': 3, 'n_estimators': 20}",-6.298513493015556,2.1451593044353072,0.6991861444181648,13.878655689715464,0.28753821900817933,,,,OS,OS,gbm,0

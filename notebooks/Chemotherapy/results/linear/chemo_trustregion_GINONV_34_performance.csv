@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/linear/chemo_trustregion_GINONV_34_model.csv,1,5,continuous,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 0.1, 'l1_ratio': 0.9}",-0.005363386603639346,0.00405709203765725,0.2850429841143478,0.005834965634277023,0.21094826134402922,0.106,0.7506265664160402,0.7280701754385965,GINONV_34,GINONV_34,linear,0

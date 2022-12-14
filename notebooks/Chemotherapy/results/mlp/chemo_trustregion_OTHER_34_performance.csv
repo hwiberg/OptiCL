@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/mlp/chemo_trustregion_OTHER_34_model.csv,1,5,continuous,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (20,)}",-1.9851874070480786,0.0006118209935161415,0.24514837023118607,0.0018174531700553102,-0.3729033832917139,0.1008105757875056,0.7393048128342246,0.6812865497076024,OTHER_34,OTHER_34,mlp,0

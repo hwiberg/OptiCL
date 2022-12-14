@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/linear/chemo_trustregion_DLT_PROP_model.csv,1,5,continuous,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 1, 'l1_ratio': 0.4}",-0.029296164557001576,0.024609788630514638,0.1568406391760243,0.02830775991392976,0.13945443947251135,0.6373041536518852,0.7055878552971576,0.7528455284552845,DLT_PROP,DLT_PROP,linear,0

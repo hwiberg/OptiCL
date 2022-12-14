@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/mlp/chemo_trustregion_DLT_PROP_model.csv,1,5,continuous,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (20,)}",-14.715321694850067,0.017845154702991202,0.38860469469768144,0.0532084226217681,-0.6175166106061722,0.6373041536518852,0.849483204134367,0.46178861788617886,DLT_PROP,DLT_PROP,mlp,0

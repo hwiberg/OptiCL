@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/svm/chemo_trustregion_OS_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 1},-8.493468778636203,3.5332490706905664,0.5045355030333514,11.544950348970474,0.4073391493395945,,,,OS,OS,svm,0

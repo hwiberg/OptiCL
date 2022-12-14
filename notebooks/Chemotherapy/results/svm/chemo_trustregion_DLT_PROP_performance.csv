@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/svm/chemo_trustregion_DLT_PROP_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 0.1},-0.04933231932988809,0.017804299894139175,0.3900044269357531,0.03826148913697501,-0.16313529279978045,0.6373041536518852,0.8301033591731266,0.5577235772357724,DLT_PROP,DLT_PROP,svm,0

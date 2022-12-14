@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/mlp/chemo_trustregion_INFECTION_34_model.csv,1,5,continuous,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (20,)}",-0.8100431564753083,0.005423309603909615,0.2846205018955901,0.012331995908312212,-3.2394269345803313,0.075,0.8038847117794486,0.497737556561086,INFECTION_34,INFECTION_34,mlp,0

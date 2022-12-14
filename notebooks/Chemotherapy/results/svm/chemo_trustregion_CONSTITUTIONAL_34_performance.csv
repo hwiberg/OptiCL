@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/svm/chemo_trustregion_CONSTITUTIONAL_34_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 0.1},-0.0099055969676302,0.0035999366870118053,0.41339848500999077,0.006989391357372957,-0.3575543464397912,0.08181819844581517,0.7780748663101604,0.6380090497737556,CONSTITUTIONAL_34,CONSTITUTIONAL_34,svm,0

@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/rf/chemo_trustregion_OTHER_34_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-0.0007932290196202829,0.00029283409736989,0.63870756643837,0.001192332927194185,0.09931219316908602,0.1008105757875056,0.872827540106952,0.6681286549707602,OTHER_34,OTHER_34,rf,0

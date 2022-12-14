@@ -1,2 +1,0 @@
-save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
-results/svm/chemo_trustregion_INFECTION_34_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 0.1},-0.01735667463234838,0.002444928165115486,0.677493705614598,0.0034007220183838506,-0.16908184441086527,0.075,0.8518170426065163,0.6500754147812972,INFECTION_34,INFECTION_34,svm,0
