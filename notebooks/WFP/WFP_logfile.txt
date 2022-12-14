@@ -1,0 +1,46 @@
+Solver command line: ['C:\\glpk-4.65\\w64\\glpsol.exe', '--write', 'C:\\Users\\dmaragn\\AppData\\Local\\Temp\\tmptqzq_kp8.glpk.raw', '--wglp', 'C:\\Users\\dmaragn\\AppData\\Local\\Temp\\tmp5z0c3_qg.glpk.glp', '--cpxlp', 'C:\\Users\\dmaragn\\AppData\\Local\\Temp\\tmpnw2ybhrc.pyomo.lp']
+
+GLPSOL: GLPK LP/MIP Solver, v4.65
+Parameter(s) specified in the command line:
+ --write C:\Users\dmaragn\AppData\Local\Temp\tmptqzq_kp8.glpk.raw --wglp C:\Users\dmaragn\AppData\Local\Temp\tmp5z0c3_qg.glpk.glp
+ --cpxlp C:\Users\dmaragn\AppData\Local\Temp\tmpnw2ybhrc.pyomo.lp
+Reading problem data from 'C:\Users\dmaragn\AppData\Local\Temp\tmpnw2ybhrc.pyomo.lp'...
+C:\Users\dmaragn\AppData\Local\Temp\tmpnw2ybhrc.pyomo.lp:72383: warning: lower bound of variable 'x47' redefined
+C:\Users\dmaragn\AppData\Local\Temp\tmpnw2ybhrc.pyomo.lp:72383: warning: upper bound of variable 'x47' redefined
+3189 rows, 5671 columns, 57112 non-zeros
+624 integer variables, all of which are binary
+73007 lines were read
+Writing problem data to 'C:\Users\dmaragn\AppData\Local\Temp\tmp5z0c3_qg.glpk.glp'...
+74191 lines were written
+GLPK Integer Optimizer, v4.65
+3189 rows, 5671 columns, 57112 non-zeros
+624 integer variables, all of which are binary
+Preprocessing...
+3099 constraint coefficient(s) were reduced
+3184 rows, 5667 columns, 57103 non-zeros
+624 integer variables, all of which are binary
+Scaling...
+ A: min|aij| =  5.692e-06  max|aij| =  1.000e+05  ratio =  1.757e+10
+GM: min|aij| =  1.136e-02  max|aij| =  8.799e+01  ratio =  7.743e+03
+EQ: min|aij| =  1.297e-04  max|aij| =  1.000e+00  ratio =  7.709e+03
+2N: min|aij| =  9.100e-05  max|aij| =  1.722e+00  ratio =  1.892e+04
+Constructing initial basis...
+Size of triangular part is 3182
+Solving LP relaxation...
+GLPK Simplex Optimizer, v4.65
+3184 rows, 5667 columns, 57103 non-zeros
+      0: obj =   5.661288964e+03 inf =   2.793e+02 (53)
+    261: obj =   6.529786514e+03 inf =   6.939e-18 (0) 2
+*   714: obj =   3.431325529e+03 inf =   1.596e-08 (0) 4
+OPTIMAL LP SOLUTION FOUND
+Integer optimization begins...
+Long-step dual simplex will be used
++   714: mip =     not found yet >=              -inf        (1; 0)
++  1307: >>>>>   3.431325529e+03 >=   3.431325529e+03 < 0.1% (134; 0)
++  1307: mip =   3.431325529e+03 >=     tree is empty   0.0% (0; 267)
+INTEGER OPTIMAL SOLUTION FOUND
+Time used:   1.8 secs
+Memory used: 13.3 Mb (13913097 bytes)
+Writing MIP solution to 'C:\Users\dmaragn\AppData\Local\Temp\tmptqzq_kp8.glpk.raw'...
+8869 lines were written
+

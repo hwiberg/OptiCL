@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/mlp/vAAAI-23_WFPexample_palatability_model.csv,1,5,continuous,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (100,)}",-0.00867720311830257,0.0051271101199162955,0.8992556163377531,0.0069083340665711075,0.8671828205988604,0.5,0.9753254013016053,0.9712205450884799,palatability,palatability,mlp,0

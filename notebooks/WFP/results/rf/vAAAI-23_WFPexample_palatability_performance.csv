@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/rf/vAAAI-23_WFPexample_palatability_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-0.0169876651887138,0.016011704034835608,0.6853804157422385,0.015656300875419662,0.6989975148725057,0.5,0.9213449353797416,0.9293822624093887,palatability,palatability,rf,0

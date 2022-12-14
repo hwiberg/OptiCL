@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/svm/vAAAI-23_WFPexample_palatability_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-0.019205028404204988,0.018939661479824902,0.6278479537342743,0.01913580809204916,0.6321017437987106,0.5,0.8989785959143837,0.909462796850671,palatability,palatability,svm,0
