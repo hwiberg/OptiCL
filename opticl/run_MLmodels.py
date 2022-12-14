@@ -98,12 +98,12 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
         if task == 'binary':
             from sklearn.linear_model import LogisticRegression
             param_grid = {'C': np.arange(0.001, 1, 0.05), 'penalty': ['l2', 'l1']}
-            est = LogisticRegression(random_state=seed, solver='saga', max_iter=1e4)
+            est = LogisticRegression(random_state=seed, solver='saga')
         elif task == 'multiclass':
             from sklearn.linear_model import LogisticRegression
             param_grid = parameter_grid if parameter_grid is not None else {'C': np.arange(0.001, 1, 0.05),
-                                                                            'penalty': ['l2', 'l1'], 'max_iter': [1e4]}
-            est = LogisticRegression(random_state=seed, multi_class='multinomial', solver='saga', max_iter=1e4)
+                                                                            'penalty': ['l2', 'l1']}
+            est = LogisticRegression(random_state=seed, multi_class='multinomial', solver='saga')
         elif task == 'continuous':
             from sklearn.linear_model import ElasticNet
             param_grid = parameter_grid if parameter_grid is not None else {'alpha': [0.1, 1, 10, 100, 1000],
@@ -225,10 +225,10 @@ def initialize_model(model_choice, task, cv_folds, parameter_grid, gs_metric, se
         }
         if task in ['binary', 'multiclass']:
             from sklearn.svm import LinearSVC
-            est = LinearSVC(max_iter=1e5, dual=False, penalty='l2')
+            est = LinearSVC(dual=False, penalty='l2')
         elif task == 'continuous':
             from sklearn.svm import LinearSVR
-            est = LinearSVR(max_iter=1e5, dual=False, loss='squared_epsilon_insensitive')
+            est = LinearSVR(dual=False, loss='squared_epsilon_insensitive')
         gs = GridSearchCV(estimator=est, param_grid=param_grid, scoring=gs_metric, cv=cv_folds)
 
     elif model_choice == "mlp":
