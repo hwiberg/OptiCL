@@ -15,7 +15,7 @@ from test_mip_single import *
 
 np.random.seed(0)
 
-alg_list = ['cart','linear','gbm','svm','rf','mlp']
+alg_list = ['cart','lineaar','gbm','svm','rf','mlp']
 violation_list = ['average',0.0,0.1,0.25,0.5]
 bs_list = [2,5,10,25,50]
 

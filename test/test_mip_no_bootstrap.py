@@ -261,10 +261,10 @@ def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None):
     solutions_df.to_csv('experiments/solution_%s.csv' % code_version, index = False)
     return solutions_df
 
-for viol_rule in [0,0.1,0.25,0.5,'average']:
-    alg = 'ensemble'
-    bs = 0
-    run_experiment(alg, bs, viol_rule, n_iterations = 100)
+#for viol_rule in [0,0.1,0.25,0.5,'average']:
+#    alg = 'ensemble'
+#    bs = 0
+#    run_experiment(alg, bs, viol_rule, n_iterations = 100)
 
 for alg in ['cart','linear','gbm','svm','rf','mlp']:
     bs = 0
