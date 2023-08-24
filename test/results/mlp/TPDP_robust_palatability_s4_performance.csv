@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/mlp/TPDP_robust_palatability_s4_model.csv,1,5,continuous,"{'hidden_layer_sizes': [(10,), (20,), (50,), (100,)]}","{'hidden_layer_sizes': (10,)}",-0.013091899553845428,0.0041361123812713235,0.9183238244529565,0.018585406464219075,0.6361233859146066,0.5,0.9757926272449093,0.914054725248567,palatability,palatability_s4,mlp,4

@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/linear/TPDP_robust_palatability_s31_model.csv,1,5,continuous,"{'alpha': [0.1, 1, 10, 100, 1000], 'l1_ratio': array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])}","{'alpha': 0.1, 'l1_ratio': 0.1}",-0.047118242152109,0.045464149163476957,0.09081780584208377,0.04888694680537367,0.06755774591014374,0.5,0.6649586830633092,0.6416841946288923,palatability,palatability_s31,linear,31

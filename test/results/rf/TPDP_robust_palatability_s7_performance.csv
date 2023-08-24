@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/rf/TPDP_robust_palatability_s7_model.csv,1,5,continuous,"{'n_estimators': [10, 25], 'max_features': ['auto'], 'max_depth': [2, 3, 4]}","{'max_depth': 4, 'max_features': 'auto', 'n_estimators': 25}",-0.014945197725290089,0.010687084171028953,0.7960321760351805,0.017308337655339102,0.6611708371421927,0.5,0.9556260921143334,0.913735796349583,palatability,palatability_s7,rf,7

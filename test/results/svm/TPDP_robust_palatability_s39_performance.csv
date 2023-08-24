@@ -1,0 +1,2 @@
+save_path,seed,cv_folds,task,parameters,best_params,valid_score,train_score,train_r2,test_score,test_r2,auc_threshold,auc_train,auc_test,outcome,outcome_label,alg,bootstrap_iteration
+results/svm/TPDP_robust_palatability_s39_model.csv,1,5,continuous,"{'C': [0.1, 1, 10, 100]}",{'C': 100},-0.017158346178178335,0.015330544713669172,0.7093459254856581,0.02175802077029915,0.5790282458514793,0.5,0.9388489208633093,0.8886176763873094,palatability,palatability_s39,svm,39
