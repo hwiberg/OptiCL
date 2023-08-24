@@ -1,0 +1,12 @@
+,model,task,objective,lb,ub,features,var_features,contex_features,group_models,group_method,ensemble_weights,max_violation,trust_region,dataset_path,clustering_model,enlargement,SCM_counterfactuals
+palatability,"{'results/gbm/TPDP_robust_palatability_s0_model.csv': 'gbm', 'results/gbm/TPDP_robust_palatability_s1_model.csv': 'gbm'}",continuous,0,0.5,,"Index(['Beans', 'Bulgur', 'Cheese', 'Fish', 'Meat', 'CSB', 'Dates', 'DSM',
+       'Milk', 'Salt', 'Lentils', 'Maize', 'Maize meal', 'Chickpeas', 'Rice',
+       'Sorghum', 'Soya-fortified bulgur wheat', 'Soya-fortified maize meal',
+       'Soya-fortified sorghum grits', 'Soya-fortified wheat flour', 'Sugar',
+       'Oil', 'Wheat', 'Wheat flour', 'WSB'],
+      dtype='object')","Index(['Beans', 'Bulgur', 'Cheese', 'Fish', 'Meat', 'CSB', 'Dates', 'DSM',
+       'Milk', 'Salt', 'Lentils', 'Maize', 'Maize meal', 'Chickpeas', 'Rice',
+       'Sorghum', 'Soya-fortified bulgur wheat', 'Soya-fortified maize meal',
+       'Soya-fortified sorghum grits', 'Soya-fortified wheat flour', 'Sugar',
+       'Oil', 'Wheat', 'Wheat flour', 'WSB'],
+      dtype='object')",{},True,violation,,0.1,True,../notebooks/WFP/processed-data/WFP_dataset.csv,,[0],
