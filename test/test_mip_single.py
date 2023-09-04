@@ -24,7 +24,7 @@ np.random.seed(0)
 
 
 
-def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None):
+def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None, time_limit = None, print_output = False):
     if alg == 'ensemble':
         alg_list = ['cart','linear','gbm','svm','rf','mlp']
         print("Ensemble with methods: ", alg_list)
@@ -213,7 +213,10 @@ def run_experiment(alg, bs, viol_rule, n_iterations = 100, fixed_seed = None):
         # MIP_final_model.write('experiments/mip_%s_seed_%d.lp' % (code_version, seed))
         opt = SolverFactory('gurobi')
         start_time = time.time()
-        results = opt.solve(MIP_final_model) 
+        if time_limit != None:
+            opt.options['TimeLimit'] = time_limit
+            
+        results = opt.solve(MIP_final_model, tee = print_output) 
         computation_time = time.time() - start_time
         pred_palat = value(MIP_final_model.y[outcome])
 
